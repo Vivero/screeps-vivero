@@ -43,7 +43,7 @@ exports.run = function(room) {
     // harvesters to build
     var numHarvesters = Math.ceil(maxOccupancy / 2);
 
-    //console.log("Max occ: " + maxOccupancy + ", build: " + numHarvesters);
+    console.log("Max occ: " + maxOccupancy + ", build: " + numHarvesters);
 
     // get spawn
     var spawns = room.find(FIND_MY_SPAWNS);
