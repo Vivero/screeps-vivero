@@ -47,6 +47,72 @@ exports.run = function(room) {
 
     // get spawn
     var spawns = room.find(FIND_MY_SPAWNS);
+    for (var s in spawns) {
+        var spawn = spawns[s];
+        if (spawn.spawning == null) {
+            var body = null
+            var mem = null;
+            
+            // priority spawns
+            //--------------------------
+            if (room.memory.population['harvester'].length < 3) {
+                body = Utils.getBestCreepClass(room, 'harvester');
+                mem = Globals.getCreepRoleMemory('harvester');
+                if (spawn.canCreateCreep(body) == OK) {
+                    spawn.createCreep(body, undefined, mem);
+                }
+
+            } else if (room.memory.population['upgrader'].length < 5) {
+                body = Utils.getBestCreepClass(room, 'upgrader');
+                mem = Globals.getCreepRoleMemory('upgrader');
+                if (spawn.canCreateCreep(body) == OK) {
+                    spawn.createCreep(body, undefined, mem);
+                }
+
+            } else if (room.memory.population['builder'].length < 2) {
+                body = Utils.getBestCreepClass(room, 'builder');
+                mem = Globals.getCreepRoleMemory('builder');
+                if (spawn.canCreateCreep(body) == OK) {
+                    spawn.createCreep(body, undefined, memMEM_TYPE_B);
+                }
+
+            } else if (room.memory.population['distributor'].length < 1) {
+                body = Utils.getBestCreepClass(room, 'distributor');
+                mem = Globals.getCreepRoleMemory('distributor');
+                if (spawn.canCreateCreep(body) == OK) {
+                    spawn.createCreep(body, undefined, mem);
+                }
+
+            } /*else if (!('soldier' in room.memory.population) || (room.memory.population['soldier'].length < 1)) {
+                if (spawn.canCreateCreep(Globals.TYPE_S_CLASS_4) == OK) {
+                    spawn.createCreep(Globals.TYPE_S_CLASS_4, undefined, Globals.MEM_TYPE_S);
+                }
+
+            } */else {
+
+                // extra spawns
+                //----------------------
+                if (room.memory.customSpawn) {
+                    /*if (spawn.canCreateCreep(Globals.TYPE_R_CLASS_1) == OK) {
+                        var reclaimerMemory = $.extend({}, Globals.MEM_TYPE_R);
+                        reclaimerMemory.target = new RoomPosition(25, 15, 'E18S76');
+                        spawn.createCreep(Globals.TYPE_R_CLASS_1, undefined, reclaimerMemory);
+                        room.memory.customSpawn = false;
+                    }*/
+                    if (spawn.canCreateCreep(Globals.TYPE_S_CLASS_4) == OK) {
+                        spawn.createCreep(Globals.TYPE_S_CLASS_4, undefined, Globals.MEM_TYPE_S);
+                        room.memory.customSpawn = false;
+                    }
+                }
+
+            }
+        }
+    }
+
+
+
+
+    /*
 
     // spawn harvesters
     var harvesterBody = Utils.getBestCreepClass(room, 'harvester');
@@ -92,5 +158,7 @@ exports.run = function(room) {
             }
         }
     }
+
+    */
 
 };

@@ -172,6 +172,15 @@ exports.CREEP_MEMORY = {
     flag:       null,
 };
 
+exports.getCreepRoleMemory = function(role) {
+    var memory = null;
+    if (_.includes(exports.CREEP_ROLES, role)) {
+        memory = Object.assign({}, exports.CREEP_MEMORY);
+        memory.role = role;
+    }
+    return memory;
+}
+
 var room_mem = {
     sources:    [],
     population: {},
