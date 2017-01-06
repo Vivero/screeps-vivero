@@ -43,7 +43,7 @@ exports.run = function(room) {
     // harvesters to build
     var numHarvesters = Math.ceil(maxOccupancy / 2);
 
-    console.log("Max occ: " + maxOccupancy + ", build: " + numHarvesters);
+    //console.log("Max occ: " + maxOccupancy + ", build: " + numHarvesters);
 
     // get spawn
     var spawns = room.find(FIND_MY_SPAWNS);
@@ -55,7 +55,7 @@ exports.run = function(room) {
     for (var s in spawns) {
         var spawn = spawns[s];
         if (spawn.spawning == null) {
-            if (room.memory.population['harvester'].length < numHarvesters) {
+            if (room.memory.population['harvester'].length < 3) {
                 if (spawn.canCreateCreep(harvesterBody) == OK) {
                     spawn.createCreep(harvesterBody, undefined, harvesterMemory);
                 }
@@ -70,7 +70,7 @@ exports.run = function(room) {
     for (var s in spawns) {
         var spawn = spawns[s];
         if (spawn.spawning == null) {
-            if (room.memory.population['upgrader'].length < 1) {
+            if (room.memory.population['upgrader'].length < 5) {
                 if (spawn.canCreateCreep(upgraderBody) == OK) {
                     spawn.createCreep(upgraderBody, undefined, upgraderMemory);
                 }
@@ -85,7 +85,7 @@ exports.run = function(room) {
     for (var s in spawns) {
         var spawn = spawns[s];
         if (spawn.spawning == null) {
-            if (room.memory.population['builder'].length < 3) {
+            if (room.memory.population['builder'].length < 2) {
                 if (spawn.canCreateCreep(builderBody) == OK) {
                     spawn.createCreep(builderBody, undefined, builderMemory);
                 }
