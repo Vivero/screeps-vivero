@@ -73,7 +73,7 @@ exports.run = function(room) {
                 body = Utils.getBestCreepClass(room, 'builder');
                 mem = Globals.getCreepRoleMemory('builder');
                 if (spawn.canCreateCreep(body) == OK) {
-                    spawn.createCreep(body, undefined, memMEM_TYPE_B);
+                    spawn.createCreep(body, undefined, mem);
                 }
 
             } else if (room.memory.population['distributor'].length < 1) {
