@@ -30,7 +30,7 @@ exports.getBestCreepClass = function(room, role) {
     var bodyType = null;
 
     // determine available energy capacity
-    var energyCap = room.energyCapacityAvailable;
+    var energyCap = room.energyAvailable;
 
     // get creep classes for the role
     var creepClasses = Globals.CREEP_CLASS[role];
