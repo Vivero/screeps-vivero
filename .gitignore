@@ -38,3 +38,6 @@ jspm_packages
 
 # Screeps AutoComplete
 ScreepsAutoComplete
+
+# don't commit Gruntfile.js with credentials
+Gruntfile.js
