@@ -133,7 +133,7 @@ exports.control = {
 
         // AUTOMATIC BUILDER
         //==============================
-        ConstructionFactory.run(room);
+        //ConstructionFactory.run(room);
 
     }
 
