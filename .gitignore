@@ -41,3 +41,6 @@ ScreepsAutoComplete
 
 # don't commit Gruntfile.js with credentials
 Gruntfile.js
+
+# don't commit Windows shortcuts
+*.lnk
