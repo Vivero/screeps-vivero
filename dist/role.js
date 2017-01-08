@@ -3,7 +3,7 @@
  * Encapsulates all creep roles.
  *
  */ 
-var Globals     = require('globals');
+var Globals = require('globals');
 
 var exports = module.exports = {};
 
