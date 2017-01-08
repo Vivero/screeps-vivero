@@ -19,6 +19,7 @@ exports.STATE_WITHDRAW      =  70;
 exports.STATE_PICKUP        =  80;
 exports.STATE_ATTACK        =  90;
 exports.STATE_RALLY         = 100;
+exports.STATE_MOVE          = 110;
 
 exports.STATE_TWR_IDLE      = 500;
 exports.STATE_TWR_REPAIR    = 510;
@@ -37,6 +38,7 @@ exports.STATE_STRING[exports.STATE_WITHDRAW]    = 'withdraw';
 exports.STATE_STRING[exports.STATE_PICKUP]      = 'pickup';
 exports.STATE_STRING[exports.STATE_ATTACK]      = 'attacking';
 exports.STATE_STRING[exports.STATE_RALLY]       = 'rallying';
+exports.STATE_STRING[exports.STATE_MOVE]        = 'moving';
 
 exports.ACTION_NONE         = 1000;
 exports.ACTION_BUILDING     = 1010;
@@ -124,9 +126,9 @@ exports.CREEP_CLASS = {
     ],
 
     special: [
-        bodyPartMaker(WORK, 1, CARRY, 1, MOVE, 2); // 200
+        bodyPartMaker(WORK, 1, CARRY, 1, MOVE, 2), // 200
     ],
-}
+};
 
 
 // MEMORY STRUCTURES
@@ -136,9 +138,7 @@ exports.CREEP_CLASS = {
 exports.CREEP_MEMORY = {
     role:       'special',
     stateStack: [exports.STATE_IDLE],
-    state:      exports.STATE_IDLE,
     statePrev:  exports.STATE_IDLE,
-    lastAction: exports.ACTION_NONE,
     target:     null,
     source:     null,
     flag:       null,
@@ -163,6 +163,9 @@ exports.ROOM_MEMORY_OBJS = {
     population: {},
     autoBuild: {
         lastExecTime: 0,
+    },
+    commands: {
+        spawnSpecial: false,
     },
 };
 for (var r in exports.CREEP_ROLES) {
