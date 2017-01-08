@@ -3,6 +3,8 @@
  * Encapsulates full control of a single room.
  *
  */ 
+'use strict';
+
 var Globals = require('globals');
 var Utils = require('utils');
 var Role = require('role');
@@ -36,14 +38,17 @@ exports.run = function(room) {
 
     // CACHE SOURCES
     //======================================================================
-    if (room.memory.sources.length == 0) {
+    if (room.memory.sources.length === 0) {
         var sources = room.find(FIND_SOURCES);
-        room.memory.sources.push({
-            id:             source.id,
-            occupancy:      0,
-            maxOccupancy:   Utils.calculateSourceMaxOccupancy(source),
-            roadBuilt:      false,
-        });
+        for (var s in sources) {
+            var source = sources[s];
+            room.memory.sources.push({
+                id:             source.id,
+                occupancy:      0,
+                maxOccupancy:   Utils.calculateSourceMaxOccupancy(source),
+                roadBuilt:      false,
+            });
+        }
     }
 
 
@@ -71,7 +76,7 @@ exports.run = function(room) {
     //==============================
     for (var s in room.memory.sources) {
         var source = Game.getObjectById(room.memory.sources[s].id);
-        if (source != null) {
+        if (source !== null) {
             var nearbyCreeps = source.pos.findInRange(FIND_CREEPS, 1);
             room.memory.sources[s].occupancy = nearbyCreeps.length;
         }
@@ -120,7 +125,7 @@ exports.run = function(room) {
     for (var p in room.memory.population) {
         for (var c in room.memory.population[p]) {
             var creep = Game.getObjectById(room.memory.population[p][c]);
-            if (creep != null) {
+            if (creep !== null) {
                 Role.run(creep);
             }
         }

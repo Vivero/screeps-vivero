@@ -3,8 +3,10 @@
  * Encapsulates the logic to determine creep spawning behavior.
  *
  */ 
+'use strict';
+
 var Globals = require('globals');
-var Utils = require('utils');
+var UtilsCreep = require('utils.creep');
 
 var exports = module.exports = {};
 
@@ -49,35 +51,35 @@ exports.run = function(room) {
     var spawns = room.find(FIND_MY_SPAWNS);
     for (var s in spawns) {
         var spawn = spawns[s];
-        if (spawn.spawning == null) {
-            var body = null
+        if (spawn.spawning === null) {
+            var body = null;
             var mem = null;
             
             // priority spawns
             //--------------------------
-            if (room.memory.population['harvester'].length < 3) {
-                body = Utils.getBestCreepClass(room, 'harvester');
+            if (room.memory.population.harvester.length < 3) {
+                body = UtilsCreep.getBestBuildableCreepClass(room, 'harvester');
                 mem = Globals.getCreepRoleMemory('harvester');
                 if (spawn.canCreateCreep(body) == OK) {
                     spawn.createCreep(body, undefined, mem);
                 }
 
-            } else if (room.memory.population['upgrader'].length < 5) {
-                body = Utils.getBestCreepClass(room, 'upgrader');
+            } else if (room.memory.population.upgrader.length < 5) {
+                body = UtilsCreep.getBestPossibleCreepClass(room, 'upgrader');
                 mem = Globals.getCreepRoleMemory('upgrader');
                 if (spawn.canCreateCreep(body) == OK) {
                     spawn.createCreep(body, undefined, mem);
                 }
 
-            } else if (room.memory.population['builder'].length < 2) {
-                body = Utils.getBestCreepClass(room, 'builder');
+            } else if (room.memory.population.builder.length < 2) {
+                body = UtilsCreep.getBestPossibleCreepClass(room, 'builder');
                 mem = Globals.getCreepRoleMemory('builder');
                 if (spawn.canCreateCreep(body) == OK) {
                     spawn.createCreep(body, undefined, mem);
                 }
 
-            } else if (room.memory.population['distributor'].length < 1) {
-                body = Utils.getBestCreepClass(room, 'distributor');
+            } else if (room.memory.population.distributor.length < 1) {
+                body = UtilsCreep.getBestBuildableCreepClass(room, 'distributor');
                 mem = Globals.getCreepRoleMemory('distributor');
                 if (spawn.canCreateCreep(body) == OK) {
                     spawn.createCreep(body, undefined, mem);
@@ -92,18 +94,6 @@ exports.run = function(room) {
 
                 // extra spawns
                 //----------------------
-                if (room.memory.customSpawn) {
-                    /*if (spawn.canCreateCreep(Globals.TYPE_R_CLASS_1) == OK) {
-                        var reclaimerMemory = $.extend({}, Globals.MEM_TYPE_R);
-                        reclaimerMemory.target = new RoomPosition(25, 15, 'E18S76');
-                        spawn.createCreep(Globals.TYPE_R_CLASS_1, undefined, reclaimerMemory);
-                        room.memory.customSpawn = false;
-                    }*/
-                    if (spawn.canCreateCreep(Globals.TYPE_S_CLASS_4) == OK) {
-                        spawn.createCreep(Globals.TYPE_S_CLASS_4, undefined, Globals.MEM_TYPE_S);
-                        room.memory.customSpawn = false;
-                    }
-                }
 
             }
         }
