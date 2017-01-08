@@ -4,25 +4,15 @@
  *
  */ 
 var Globals     = require('globals');
-var Harvester   = require('role.harvester');
-var Upgrader    = require('role.upgrader');
-var Builder     = require('role.builder');
-var Reclaimer   = require('role.reclaimer');
-var Distributor = require('role.distributor');
-var Soldier     = require('role.soldier');
-var Special     = require('role.special');
 
 var exports = module.exports = {};
 
-// define role functions
-var roles = {
-    harvester:   Harvester,
-    upgrader:    Upgrader,
-    builder:     Builder,
-    reclaimer:   Reclaimer,
-    distributor: Distributor,
-    soldier:     Soldier,
-};
+// define role functions from source files
+var roles = {};
+for (var r in Globals.CREEP_ROLES) {
+    var role = Globals.CREEP_ROLES[r];
+    roles[role] = require('role.' + role);
+}
 
 function initialize(creep) {
     // if any fields are missing,
@@ -36,25 +26,30 @@ function initialize(creep) {
     if (missing) {
         creep.memory = Object.assign({}, Globals.CREEP_MEMORY);
     }
+
+    // if the state stack is empty, initialize it,
+    // but warn because it should never be empty
+    if (creep.memory.stateStack.length == 0) {
+        console.log("WARNING! " + creep.name + ": empty state stack!");
+        creep.memory.stateStack = Object.assign({}, Globals.CREEP_MEMORY.stateStack);
+    }
 }
 
 exports.run = function(creep) {
 
     // init
     initialize(creep);
-    var state = creep.memory.state;
+    var startingState = creep.memory.stateStack[creep.memory.stateStack.length - 1];
 
     // announce change in state
-    if (state != creep.memory.statePrev) {
-        creep.say(Globals.STATE_STRING[state]);
+    if (startingState != creep.memory.statePrev) {
+        creep.say(Globals.STATE_STRING[startingState]);
     }
 
     // run the role's state machine
-    state = roles[creep.memory.role].run(creep);
-
+    roles[creep.memory.role].run(creep);
 
     // end
-    creep.memory.statePrev = creep.memory.state;
-    creep.memory.state = state;
+    creep.memory.statePrev = startingState;
 
 };
