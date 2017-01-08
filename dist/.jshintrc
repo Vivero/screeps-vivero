@@ -1,0 +1,10 @@
+{
+    "node": true,
+    "strict": "global",
+    "undef": true,
+    "unused": true,
+    "globals": {
+        "_": true,
+        "Game": true
+    }
+}
