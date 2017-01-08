@@ -112,3 +112,24 @@ var r = 'soldier';
 var body = getBestCreepClass({energyCapacityAvailable: e}, r);
 var cost = getCreepBodyCost(body);
 console.log("Given " + e + ", build: " + body + " (" + cost + ")");
+
+
+
+var towers = [
+    {id: 'abc', target: 33},
+    {id: 'def', target: 932},
+    {id: 'ghi', target: 1},
+];
+
+var t = _.find(towers, {id: 'abfc'});
+
+var CREEP_MEMORY = {
+    role:       null,
+    stateStack: [exports.STATE_IDLE],
+    state:      exports.STATE_IDLE,
+    statePrev:  exports.STATE_IDLE,
+    lastAction: exports.ACTION_NONE,
+    target:     null,
+    source:     null,
+    flag:       null,
+};
