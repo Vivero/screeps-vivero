@@ -10,6 +10,7 @@ var Builder     = require('role.builder');
 var Reclaimer   = require('role.reclaimer');
 var Distributor = require('role.distributor');
 var Soldier     = require('role.soldier');
+var Special     = require('role.special');
 
 var exports = module.exports = {};
 
@@ -23,38 +24,34 @@ var roles = {
     soldier:     Soldier,
 };
 
+function initialize(creep) {
+    // if any fields are missing,
+    // something could've gone wrong with the creep's
+    // memory, so just wipe it
+    var missing = false;
+    for (var f in Globals.CREEP_MEMORY) {
+        missing = !(f in creep.memory);
+        if (missing) break;
+    }
+    if (missing) {
+        creep.memory = Object.assign({}, Globals.CREEP_MEMORY);
+    }
+}
+
 exports.run = function(creep) {
 
-    // initialize the state
-    if (!('state' in creep.memory) || creep.memory.state == null) {
-        creep.memory.state = Globals.STATE_IDLE;
-        creep.memory.statePrev = Globals.STATE_IDLE;
-    }
+    // init
+    initialize(creep);
     var state = creep.memory.state;
 
-    // failsafe: in case memory gets wiped
-    if (!('role' in creep.memory) || ('role' in creep.memory && !(creep.memory.role in roles))) {
-        creep.memory.role = 'harvester';
-        creep.memory.state = Globals.STATE_IDLE;
-        creep.memory.statePrev = Globals.STATE_IDLE;
+    // announce change in state
+    if (state != creep.memory.statePrev) {
+        creep.say(Globals.STATE_STRING[state]);
     }
 
-    // override behavior
-    if (('override' in creep.memory) && creep.memory.override) {
-        creep.moveTo(Game.flags["Rally Alpha"]);
-    }
-    else {
+    // run the role's state machine
+    state = roles[creep.memory.role].run(creep);
 
-        // announce change in state
-        if (state != creep.memory.statePrev) {
-            creep.say(Globals.STATE_STRING[state]);
-        }
-
-        // run the role's state machine
-        state = roles[creep.memory.role].run(creep);
-
-    }
-    
 
     // end
     creep.memory.statePrev = creep.memory.state;
