@@ -14,16 +14,15 @@ var exports = module.exports = {};
 
 function initialize(room) {
     // ROOM_MEMORY fields get initialized unless they already exist
-    for (var f in exports.ROOM_MEMORY_ARYS) {
-        var field = exports.ROOM_MEMORY_ARYS[f];
+    for (var f in Globals.ROOM_MEMORY_ARYS) {
+        var field = Globals.ROOM_MEMORY_ARYS[f];
         if (!(field in room.memory)) {
             room.memory[field] = [];
         }
     }
-    for (var f in exports.ROOM_MEMORY_OBJS) {
-        var field = exports.ROOM_MEMORY_OBJS[f];
+    for (var field in Globals.ROOM_MEMORY_OBJS) {
         if (!(field in room.memory)) {
-            room.memory[field] = Object.assign({}, exports.ROOM_MEMORY_OBJS[field]);
+            room.memory[field] = Object.assign({}, Globals.ROOM_MEMORY_OBJS[field]);
         }
     }
 }
@@ -91,6 +90,22 @@ exports.run = function(room) {
         var creep = creeps[c];
         if (!(_.includes(room.memory.population[creep.memory.role], creep.id))) {
             room.memory.population[creep.memory.role].push(creep.id);
+        }
+    }
+
+
+    // PROCESS COMMANDS BUFFER
+    //==============================
+    if (room.memory.commands.spawnSpecial) {
+        var spawns = room.find(FIND_MY_SPAWNS);
+        if (spawns.length) {
+            var spawn = spawns[0];
+            var body = Utils.getBestCreepClass(room, 'special');
+            var mem = Globals.getCreepRoleMemory('special');
+            if (spawn.canCreateCreep(body) == OK) {
+                spawn.createCreep(body, undefined, mem);
+                room.memory.commands.spawnSpecial = false;
+            }
         }
     }
 
