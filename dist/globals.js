@@ -84,6 +84,7 @@ exports.CREEP_ROLES = [
     'reclaimer',
     'distributor',
     'soldier',
+    'special',
 ];
 
 
@@ -121,6 +122,10 @@ exports.CREEP_CLASS = {
         bodyPartMaker(TOUGH,  2, ATTACK, 2, MOVE, 4), // 380
         bodyPartMaker(TOUGH, 10, ATTACK, 6, MOVE, 8), // 100 + 480 + 400 = 980
     ],
+
+    special: [
+        bodyPartMaker(WORK, 1, CARRY, 1, MOVE, 2); // 200
+    ],
 }
 
 
@@ -129,7 +134,8 @@ exports.CREEP_CLASS = {
 
 // creep memory
 exports.CREEP_MEMORY = {
-    role:       null,
+    role:       'special',
+    stateStack: [exports.STATE_IDLE],
     state:      exports.STATE_IDLE,
     statePrev:  exports.STATE_IDLE,
     lastAction: exports.ACTION_NONE,
