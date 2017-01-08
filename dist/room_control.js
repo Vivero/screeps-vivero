@@ -54,7 +54,6 @@ exports.run = function(room) {
         filter: { structureType: STRUCTURE_TOWER },
     });
     if (room.memory.towers.length != towers.length) {
-        console.log("Tower survey triggered...");
         for (var t in towers) {
             var tower = towers[t];
             if (!(_.find(room.memory.towers, {'id': tower.id}))) {
@@ -123,5 +122,5 @@ exports.run = function(room) {
     // AUTOMATIC BUILDER
     //==============================
     //ConstructionFactory.run(room);
-    
+
 };
