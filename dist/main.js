@@ -1,33 +1,39 @@
 var Globals = require('globals');
 var RoomControl = require('room_control');
 
+function initialize() {
 
-module.exports.loop = function () {
-
-    // CUSTOM EXECUTION TRIGGER
-    //==================================
-    if ('trigger' in Memory) {
-        if (Memory.trigger) {
-            console.log("Custom trigger!");
-            Memory.trigger = false;
-        }
-    } else {
-        Memory.trigger = false;
+    // initialize commands buffer
+    if (!('commands' in Memory)) {
+        Memory.commands = Object.assign({}, Globals.GAME_MEMORY.commands);
     }
+}
 
-    // EXECUTE ROOM CONTROL
-    //==================================
-    for (var r in Game.rooms) {
-        RoomControl.control.run(Game.rooms[r]);
-    }
-
-    // MEMORY CLEANUP
-    //==================================
+function cleanup() {
+    // clean up creep memory
     for (var name in Memory.creeps) {
         if (!Game.creeps[name]) {
             delete Memory.creeps[name];
             console.log("Clearing creep memory: ", name);
         }
     }
+}
+
+
+module.exports.loop = function () {
+
+    // INITIALIZE
+    //==================================
+    initialize();
+
+    // EXECUTE ROOM CONTROL
+    //==================================
+    for (var r in Game.rooms) {
+        RoomControl.run(Game.rooms[r]);
+    }
+
+    // CLEANUP
+    //==================================
+    cleanup();
 
 }

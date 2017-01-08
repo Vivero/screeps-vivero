@@ -7,7 +7,7 @@ var exports = module.exports = {};
 
 
 // AI LOGIC
-//======================================
+//==============================================================================
 exports.STATE_IDLE          =   0;
 exports.STATE_BUILD         =  10;
 exports.STATE_HARVEST       =  20;
@@ -25,19 +25,18 @@ exports.STATE_TWR_REPAIR    = 510;
 exports.STATE_TWR_HEAL      = 520;
 exports.STATE_TWR_ATTACK    = 530;
 
-var STATE_STRING = {};
-STATE_STRING[exports.STATE_IDLE]          = 'idle';
-STATE_STRING[exports.STATE_BUILD]         = 'building';
-STATE_STRING[exports.STATE_HARVEST]       = 'harvesting';
-STATE_STRING[exports.STATE_REPAIR]        = 'repairing';
-STATE_STRING[exports.STATE_STORE]         = 'storing';
-STATE_STRING[exports.STATE_UPGRADE]       = 'upgrading';
-STATE_STRING[exports.STATE_DISTRIBUTE]    = 'distribute';
-STATE_STRING[exports.STATE_WITHDRAW]      = 'withdraw';
-STATE_STRING[exports.STATE_PICKUP]        = 'pickup';
-STATE_STRING[exports.STATE_ATTACK]        = 'attacking';
-STATE_STRING[exports.STATE_RALLY]         = 'rallying';
-exports.STATE_STRING = STATE_STRING;
+exports.STATE_STRING = {};
+exports.STATE_STRING[exports.STATE_IDLE]        = 'idle';
+exports.STATE_STRING[exports.STATE_BUILD]       = 'building';
+exports.STATE_STRING[exports.STATE_HARVEST]     = 'harvesting';
+exports.STATE_STRING[exports.STATE_REPAIR]      = 'repairing';
+exports.STATE_STRING[exports.STATE_STORE]       = 'storing';
+exports.STATE_STRING[exports.STATE_UPGRADE]     = 'upgrading';
+exports.STATE_STRING[exports.STATE_DISTRIBUTE]  = 'distribute';
+exports.STATE_STRING[exports.STATE_WITHDRAW]    = 'withdraw';
+exports.STATE_STRING[exports.STATE_PICKUP]      = 'pickup';
+exports.STATE_STRING[exports.STATE_ATTACK]      = 'attacking';
+exports.STATE_STRING[exports.STATE_RALLY]       = 'rallying';
 
 exports.ACTION_NONE         = 1000;
 exports.ACTION_BUILDING     = 1010;
@@ -46,7 +45,7 @@ exports.ACTION_REPAIRING    = 1020;
 
 
 // CREEPS
-//======================================
+//==============================================================================
 
 // creep body part costs
 /*
@@ -125,43 +124,10 @@ exports.CREEP_CLASS = {
 }
 
 
-// harvesters
-exports.TYPE_H_CLASS_1 = [WORK, CARRY, CARRY, MOVE, MOVE]; // 300
-exports.TYPE_H_CLASS_2 = [WORK, WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE]; // 600
-exports.TYPE_H_CLASS_3 = [WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE]; // 750
-
-// upgraders
-exports.TYPE_U_CLASS_1 = [WORK, CARRY, CARRY, CARRY, MOVE]; // 300
-exports.TYPE_U_CLASS_2 = [WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE]; // 800
-
-// builders
-exports.TYPE_B_CLASS_1 = [WORK, WORK, CARRY, CARRY, MOVE, MOVE]; // 400
-exports.TYPE_B_CLASS_2 = [WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE]; // 500
-exports.TYPE_B_CLASS_3 = [WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE]; // 800
-
-// reclaimers
-exports.TYPE_R_CLASS_1 = [TOUGH, CLAIM, MOVE, MOVE]; // 710
-
-// distributors
-exports.TYPE_D_CLASS_1 = [CARRY, CARRY, MOVE, MOVE]; // 200
-exports.TYPE_D_CLASS_2 = [CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE]; // 400
-exports.TYPE_D_CLASS_3 = [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE]; // 600
-exports.TYPE_D_CLASS_4 = [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE]; // 800
-
-// soldiers
-exports.TYPE_S_CLASS_1 = [TOUGH, ATTACK, MOVE]; // 140
-exports.TYPE_S_CLASS_2 = [TOUGH, ATTACK, MOVE, MOVE]; // 190
-exports.TYPE_S_CLASS_3 = [TOUGH, TOUGH, ATTACK, ATTACK, MOVE, MOVE, MOVE, MOVE]; // 380
-exports.TYPE_S_CLASS_4 = [
-    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, 
-    ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, 
-    MOVE, MOVE, MOVE, MOVE,
-    MOVE, MOVE, MOVE, MOVE,
-]; // 100 + 480 + 400 = 980
-
-
 // MEMORY STRUCTURES
-//--------------------------------------
+//==============================================================================
+
+// creep memory
 exports.CREEP_MEMORY = {
     role:       null,
     state:      exports.STATE_IDLE,
@@ -181,53 +147,36 @@ exports.getCreepRoleMemory = function(role) {
     return memory;
 }
 
-var room_mem = {
-    sources:    [],
+
+// room memory
+exports.ROOM_MEMORY_ARYS = [
+    'sources',
+    'towers',
+];
+exports.ROOM_MEMORY_OBJS = {
     population: {},
-    towers:     [],
-    autoBuild:  {
+    autoBuild: {
         lastExecTime: 0,
     },
 };
 for (var r in exports.CREEP_ROLES) {
     var role = exports.CREEP_ROLES[r];
-    room_mem.population[role] = [];
+    exports.ROOM_MEMORY_OBJS.population[role] = [];
 }
-exports.ROOM_MEMORY = room_mem;
 
+
+// game memory
 exports.GAME_MEMORY = {
     commands: {},
 };
 
 
-// SPAWN CONTROL
-//======================================
-exports.populationLevels = [];
-exports.populationLevels.push({
-    harvester: 3,
-    upgrader: 1,
-    builder: 1,
-});
-exports.populationLevels.push({
-    harvester: 3,
-    upgrader: 2,
-    builder: 2,
-});
-exports.populationLevels.push({
-    harvester: 3,
-    upgrader: 2,
-    builder: 2,
-    distributor: 1,
-});
-
-
-
-// GAME FIELD
-//======================================
+// GAME WORLD
+//==============================================================================
 
 // repairability thresholds
-exports.MAX_WALL_LEVEL = 300000;
-exports.MAX_RAMPART_LEVEL = 100000;
+exports.MAX_WALL_LEVEL = 50000;
+exports.MAX_RAMPART_LEVEL = 10000;
 exports.REPAIR_THRESHOLD_PCT = 0.7;
 
 // storage thresholds
