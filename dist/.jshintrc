@@ -5,6 +5,7 @@
     "unused": true,
     "globals": {
         "_": true,
-        "Game": true
+        "Game": true,
+        "Memory": true
     }
 }

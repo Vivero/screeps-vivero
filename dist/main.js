@@ -1,3 +1,5 @@
+'use strict';
+
 var Globals = require('globals');
 var RoomControl = require('room_control');
 
@@ -36,4 +38,4 @@ module.exports.loop = function () {
     //==================================
     cleanup();
 
-}
+};
