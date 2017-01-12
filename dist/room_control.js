@@ -9,8 +9,8 @@ var Globals = require('globals');
 var Utils = require('utils');
 var Role = require('role');
 var Tower = require('tower');
-var CreepFactory = require('creep_factory');
-var ConstructionFactory = require('construction_factory');
+var FactoryCreep = require('factory.creep');
+var FactoryConstruction = require('factory.construction');
 
 var exports = module.exports = {};
 
@@ -117,7 +117,7 @@ exports.run = function(room) {
 
     // SPAWN NEW CREEPS
     //==============================
-    CreepFactory.run(room);
+    FactoryCreep.run(room);
 
 
     // EXECUTE CREEP ROLES
@@ -141,6 +141,6 @@ exports.run = function(room) {
 
     // AUTOMATIC BUILDER
     //==============================
-    //ConstructionFactory.run(room);
+    //FactoryConstruction.run(room);
 
 };
