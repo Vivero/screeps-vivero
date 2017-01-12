@@ -6,6 +6,7 @@
     "globals": {
         "_": true,
         "Game": true,
-        "Memory": true
+        "Memory": true,
+        "PathFinder": true
     }
 }
