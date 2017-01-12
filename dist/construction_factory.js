@@ -3,12 +3,14 @@
  * Encapsulates the logic to determine automatic placement of buildings.
  *
  */ 
+'use strict';
+
 var Globals = require('globals');
 var Utils = require('utils');
 
 var exports = module.exports = {};
 
-exports.run = function(room) {
+function autoBuild(room) {
 
     // determine last time executed
     var lastExecTime = room.memory.autoBuild.lastExecTime;
@@ -78,5 +80,10 @@ exports.run = function(room) {
         }
         
     }
+}
+
+exports.run = function(room) {
+
+    return;
     
 };
