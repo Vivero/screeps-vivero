@@ -3,6 +3,8 @@
  * Store global constants and functions.
  *
  */ 
+'use strict';
+
 var exports = module.exports = {};
 
 

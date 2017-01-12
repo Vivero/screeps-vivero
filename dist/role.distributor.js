@@ -3,6 +3,8 @@
  * Defines functionality of the distributor role.
  *
  */ 
+'use strict';
+
 var Globals = require('globals');
 var Utils = require('utils');
 
@@ -24,7 +26,7 @@ exports.run = function(creep) {
 
             // check if there are tower sites to transfer to
             target = Utils.setTowerTarget(creep);
-            if (target != null) {
+            if (target !== null) {
                 if (creep.carry.energy > 0) {
                     state = Globals.STATE_DISTRIBUTE;
                 } else {
@@ -35,7 +37,7 @@ exports.run = function(creep) {
 
             // check if there are dropped resources to pick up
             target = Utils.setDroppedResourceTarget(creep, RESOURCE_ENERGY);
-            if (target != null) {
+            if (target !== null) {
                 if (target.amount > (creep.carryCapacity - _.sum(creep.carry))) {
                     state = Globals.STATE_STORE;
                 } else {
@@ -56,7 +58,7 @@ exports.run = function(creep) {
             }
 
             target = Utils.setTowerTarget(creep);
-            if (target != null) {
+            if (target !== null) {
                 if (creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                     creep.moveTo(target);
                 }
@@ -70,7 +72,7 @@ exports.run = function(creep) {
         //==========================
         case Globals.STATE_WITHDRAW:
             var target = Utils.setContainerTarget(creep, RESOURCE_ENERGY);
-            if (target != null) {
+            if (target !== null) {
                 var withdrawAmount = Math.min(creep.carryCapacity - _.sum(creep.carry), target.store[RESOURCE_ENERGY]);
                 if (creep.withdraw(target, RESOURCE_ENERGY, withdrawAmount) == ERR_NOT_IN_RANGE) {
                     creep.moveTo(target);
@@ -81,7 +83,7 @@ exports.run = function(creep) {
 
             if (creep.carry.energy >= creep.carryCapacity) {
                 var target = Utils.setTowerTarget(creep);
-                if (target != null) {
+                if (target !== null) {
                     state = Globals.STATE_DISTRIBUTE;
                 } else {
                     state = Globals.STATE_IDLE;
@@ -94,7 +96,7 @@ exports.run = function(creep) {
         //==========================
         case Globals.STATE_PICKUP:
             var target = Utils.setDroppedResourceTarget(creep, RESOURCE_ENERGY);
-            if (target != null) {
+            if (target !== null) {
                 var err = creep.pickup(target);
                 if (err == ERR_NOT_IN_RANGE) {
                     creep.moveTo(target);
@@ -119,7 +121,7 @@ exports.run = function(creep) {
             }
 
             var target = Utils.setStorageTarget(creep);
-            if (target != null) {
+            if (target !== null) {
                 if (creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                     creep.moveTo(target);
                 }

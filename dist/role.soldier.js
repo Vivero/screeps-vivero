@@ -4,6 +4,8 @@
  * Soldiers attack hostiles by melee.
  *
  */ 
+'use strict';
+
 var Globals = require('globals');
 var Utils = require('utils');
 

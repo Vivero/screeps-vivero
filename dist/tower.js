@@ -3,6 +3,8 @@
  * Defines functionality of towers.
  *
  */ 
+'use strict';
+
 var Globals = require('globals');
 var Utils = require('utils');
 
@@ -24,14 +26,14 @@ exports.run = function(towerInfo) {
 
             // check for hostile creeps
             target = Utils.Structure.setHostileCreepTarget(towerInfo);
-            if (target != null && tower.energy > 0) {
+            if (target !== null && tower.energy > 0) {
                 state = Globals.STATE_TWR_ATTACK;
                 break;
             }
 
             // check if there are repair sites
             target = Utils.Structure.setRepairTarget(towerInfo);
-            if (target != null && tower.energy > 0) {
+            if (target !== null && tower.energy > 0) {
                 state = Globals.STATE_TWR_REPAIR;
                 break;
             }
@@ -49,7 +51,7 @@ exports.run = function(towerInfo) {
             }
 
             target = Utils.Structure.setRepairTarget(towerInfo);
-            if (target != null) {
+            if (target !== null) {
                 tower.repair(target);
             } else {
                 state = Globals.STATE_TWR_IDLE;
@@ -68,7 +70,7 @@ exports.run = function(towerInfo) {
             }
 
             target = Utils.Structure.setHostileCreepTarget(towerInfo);
-            if (target != null) {
+            if (target !== null) {
                 tower.attack(target);
             } else {
                 state = Globals.STATE_TWR_IDLE;

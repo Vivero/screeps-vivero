@@ -1,3 +1,8 @@
+/* main.js
+ *
+ * Entry point routine for Screeps.
+ *
+ */ 
 'use strict';
 
 var Globals = require('globals');

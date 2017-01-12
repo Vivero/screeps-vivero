@@ -4,6 +4,8 @@
  * Sub-module focused on routines for structures.
  *
  */ 
+'use strict';
+
 var Globals = require('globals');
 
 var exports = module.exports = {};
@@ -15,12 +17,12 @@ exports.setRepairTarget = function(towerInfo) {
     var tower = Game.getObjectById(towerInfo.id);
 
     // retrieve from memory
-    if (towerInfo.target != null) {
+    if (towerInfo.target !== null) {
         var structure = Game.getObjectById(towerInfo.target);
 
         var range = tower.pos.getRangeTo(structure);
 
-        if (structure != null && 'structureType' in structure && range < 10) {
+        if (structure !== null && 'structureType' in structure && range < 10) {
             var repairHitsLevel = (structure.structureType === STRUCTURE_WALL) ? Globals.MAX_WALL_LEVEL : 
                 (structure.structureType === STRUCTURE_RAMPART ? Globals.MAX_RAMPART_LEVEL : structure.hitsMax);
 
@@ -46,7 +48,7 @@ exports.setRepairTarget = function(towerInfo) {
             }
         });
 
-        if (target != null) {
+        if (target !== null) {
             var range = tower.pos.getRangeTo(target);
             if (range < 10) {
                 towerInfo.target = target.id;
@@ -59,7 +61,7 @@ exports.setRepairTarget = function(towerInfo) {
     }
 
     return target;
-}
+};
 
 
 exports.setHostileCreepTarget = function(towerInfo) {
@@ -69,10 +71,10 @@ exports.setHostileCreepTarget = function(towerInfo) {
     var tower = Game.getObjectById(towerInfo.id);
 
     // retrieve from memory
-    if (towerInfo.target != null) {
+    if (towerInfo.target !== null) {
         var hostile = Game.getObjectById(towerInfo.target);
 
-        if (hostile != null && ('my' in hostile) && !hostile.my) {
+        if (hostile !== null && ('my' in hostile) && !hostile.my) {
             target = hostile;
             found = true;
             towerInfo.target = hostile.id;
@@ -83,12 +85,12 @@ exports.setHostileCreepTarget = function(towerInfo) {
     if (!found) {
         target = tower.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
 
-        if (target != null) {
+        if (target !== null) {
             towerInfo.target = target.id;
         }
     }
 
     return target;
-}
+};
 
 

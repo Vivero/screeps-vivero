@@ -3,6 +3,8 @@
  * Defines functionality of the builder role.
  *
  */ 
+'use strict';
+
 var Globals = require('globals');
 var Utils = require('utils');
 
@@ -22,11 +24,11 @@ exports.run = function(creep) {
             // check if there are sites to build
             if (creep.carry.energy > 0) {
                 var target = Utils.setBuildTarget(creep);
-                if (target != null) {
+                if (target !== null) {
                     state = Globals.STATE_BUILD;
                 } else {
                     target = Utils.setRepairTarget(creep);
-                    if (target != null) {
+                    if (target !== null) {
                         state = Globals.STATE_REPAIR;
                     } else {
                         state = Globals.STATE_IDLE;
@@ -35,11 +37,11 @@ exports.run = function(creep) {
             } else {
                 // find either a source or a storage container
                 var source = Utils.setSourceTarget(creep);
-                if (source == null) {
+                if (source === null) {
                     source = Utils.setContainerTarget(creep, RESOURCE_ENERGY);
                 }
 
-                if (source != null) {
+                if (source !== null) {
                     state = Globals.STATE_HARVEST;
                 } else {
                     state = Globals.STATE_IDLE;
@@ -56,7 +58,7 @@ exports.run = function(creep) {
             var target = Utils.setBuildTarget(creep);
 
             // special logic if building a rampart
-            if (target != null && target.structureType === STRUCTURE_RAMPART) {
+            if (target !== null && target.structureType === STRUCTURE_RAMPART) {
                 var err = creep.build(target);
                 if (err == ERR_NOT_IN_RANGE) {
                     creep.moveTo(target);
@@ -89,14 +91,14 @@ exports.run = function(creep) {
         //==========================
         case Globals.STATE_HARVEST:
             var target = Utils.setSourceTarget(creep);
-            if (target != null) {
+            if (target !== null) {
                 if (creep.harvest(target) == ERR_NOT_IN_RANGE) {
                     creep.moveTo(target);
                 }
             } else {
                 // try to find a storage container
                 target = Utils.setContainerTarget(creep, RESOURCE_ENERGY);
-                if (target != null) {
+                if (target !== null) {
                     var withdrawAmount = creep.carryCapacity - _.sum(creep.carry);
                     if (creep.withdraw(target, RESOURCE_ENERGY, withdrawAmount) == ERR_NOT_IN_RANGE) {
                         creep.moveTo(target);
@@ -131,7 +133,7 @@ exports.run = function(creep) {
             creep.memory.lastAction = Globals.ACTION_REPAIRING;
 
             var target = Utils.setRepairTarget(creep);
-            if (target != null) {
+            if (target !== null) {
                 if (creep.repair(target) == ERR_NOT_IN_RANGE) {
                     creep.moveTo(target);
                 }

@@ -3,6 +3,8 @@
  * Defines functionality of the upgrader role.
  *
  */ 
+'use strict';
+
 var Globals = require('globals');
 var Utils = require('utils');
 
@@ -24,7 +26,7 @@ exports.run = function(creep) {
                 state = Globals.STATE_UPGRADE;
             } else {
                 var source = Utils.setSourceTarget(creep);
-                if (source != null) {
+                if (source !== null) {
                     state = Globals.STATE_HARVEST;
                 } else {
                     state = Globals.STATE_IDLE;
@@ -51,14 +53,14 @@ exports.run = function(creep) {
         //==========================
         case Globals.STATE_HARVEST:
             var target = Utils.setSourceTarget(creep);
-            if (target != null) {
+            if (target !== null) {
                 if (creep.harvest(target) == ERR_NOT_IN_RANGE) {
                     creep.moveTo(target);
                 }
             } else {
                 // try to find a storage container
                 target = Utils.setContainerTarget(creep, RESOURCE_ENERGY);
-                if (target != null) {
+                if (target !== null) {
                     var withdrawAmount = creep.carryCapacity - _.sum(creep.carry);
                     if (creep.withdraw(target, RESOURCE_ENERGY, withdrawAmount) == ERR_NOT_IN_RANGE) {
                         creep.moveTo(target);
