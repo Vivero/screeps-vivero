@@ -50,7 +50,7 @@ FSM[Globals.STATE_IDLE] = function(creep) {
     }
 
     // otherwise look for a source to harvest
-    else if (_.sum(creep.carry) < creep.carryCapacity && sourceTarget(creep)) {
+    else if ((_.sum(creep.carry) < creep.carryCapacity) && sourceTarget(creep)) {
         creep.memory.stateStack.push(Globals.STATE_HARVEST);
         return;
     }
@@ -66,6 +66,7 @@ FSM[Globals.STATE_STORE] = function(creep) {
 
     // go idle if empty
     if (creep.carry.energy === 0) {
+        creep.memory.target = null;
         creep.memory.stateStack.pop();
         return;
     }
@@ -81,6 +82,8 @@ FSM[Globals.STATE_STORE] = function(creep) {
             return;
         }
 
+        // amount to store is the lesser of what the creep is carrying, or 
+        // the amount the target can store
         var amount = Math.min(target.storeCapacity - _.sum(target.store), creep.carry.energy);
         var err = creep.transfer(target, RESOURCE_ENERGY, amount);
         if (err !== OK) {
@@ -100,6 +103,7 @@ FSM[Globals.STATE_HARVEST] = function(creep) {
 
     // finish when full
     if (_.sum(creep.carry) >= creep.carryCapacity) {
+        creep.memory.target = null;
         creep.memory.stateStack.pop();
         return;
     }
