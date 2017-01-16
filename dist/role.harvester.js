@@ -88,6 +88,9 @@ FSM[Globals.STATE_STORE] = function(creep) {
             creep.memory.stateStack.pop();
             Utils.warn(creep.name + ".STATE_STORE: transfer failed! (" + err + ")");
         }
+    } else {
+        creep.memory.target = null;
+        creep.memory.stateStack.pop();
     }
 };
 
@@ -102,10 +105,10 @@ FSM[Globals.STATE_HARVEST] = function(creep) {
     }
 
     // get the harvest target from memory
-    var target = UtilsCreep.getHarvestableTarget(creep);
+    var target = UtilsCreep.setSourceTarget(creep);
 
     if (target !== null) {
-
+        
         // move if the target is far
         if (!creep.pos.inRangeTo(target, 1)) {
             creep.memory.stateStack.push(Globals.STATE_MOVE);
@@ -118,6 +121,9 @@ FSM[Globals.STATE_HARVEST] = function(creep) {
             creep.memory.stateStack.pop();
             Utils.warn(creep.name + ".STATE_HARVEST: harvest failed! (" + err + ")");
         }
+    } else {
+        creep.memory.target = null;
+        creep.memory.stateStack.pop();
     }
 };
 
@@ -132,7 +138,7 @@ FSM[Globals.STATE_MOVE] = function(creep) {
             creep.memory.stateStack.pop();
         } else {
             var err = creep.moveTo(target);
-            if (err !== OK) {
+            if (err !== OK && err !== ERR_TIRED && err !== ERR_NO_PATH) {
                 creep.memory.target = null;
                 creep.memory.stateStack.pop();
                 Utils.warn(creep.name + ".STATE_MOVE: moveTo failed! (" + err + ")");

@@ -201,21 +201,3 @@ exports.getStorableTarget = function(creep) {
     return target;
 };
 
-
-exports.getHarvestableTarget = function(creep) {
-
-    // target validation function
-    function validTarget(target) {
-        return Utils.is('Source', target) || Utils.is('Mineral', target);
-    }
-
-    // retrieve from memory
-    var target = Game.getObjectById(creep.memory.target);
-    if (!validTarget(target)) {
-        target = null;
-        creep.memory.target = null;
-    }
-
-    return target;
-};
-
