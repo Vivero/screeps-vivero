@@ -83,7 +83,7 @@ exports.setSourceTarget = function(creep) {
     var found = false;
 
     // retrieve from memory
-    var source = Game.getObjectById(creep.memory.source);
+    var source = Game.getObjectById(creep.memory.target);
     var sourceInfo = (source !== null) ? Utils.getCachedSourceInfoInRoom(source.id, creep.room) : null;
     if ((sourceInfo !== null) &&
         (source.energy > 0) &&
@@ -98,7 +98,6 @@ exports.setSourceTarget = function(creep) {
     if (!found) {
         source = exports.findAvailableSource(creep);
         if (source !== null) {
-            creep.memory.source = source.id;
             creep.memory.target = source.id;
             target = source;
         }
@@ -181,3 +180,42 @@ exports.setContainerStoreTarget = function(creep) {
 
     return target;
 };
+
+
+exports.getStorableTarget = function(creep) {
+
+    // target validation function
+    function validTarget(target) {
+        return (target !== null) &&
+               (('store' in target && _.sum(target.store) < target.storeCapacity) ||
+                ('energy' in target && target.energy < target.energyCapacity));
+    }
+
+    // retrieve from memory
+    var target = Game.getObjectById(creep.memory.target);
+    if (!validTarget(target)) {
+        target = null;
+        creep.memory.target = null;
+    }
+
+    return target;
+};
+
+
+exports.getHarvestableTarget = function(creep) {
+
+    // target validation function
+    function validTarget(target) {
+        return Utils.is('Source', target) || Utils.is('Mineral', target);
+    }
+
+    // retrieve from memory
+    var target = Game.getObjectById(creep.memory.target);
+    if (!validTarget(target)) {
+        target = null;
+        creep.memory.target = null;
+    }
+
+    return target;
+};
+

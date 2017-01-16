@@ -142,7 +142,6 @@ exports.CREEP_MEMORY = {
     stateStack: [exports.STATE_IDLE],
     statePrev:  exports.STATE_IDLE,
     target:     null,
-    source:     null,
     flag:       null,
 };
 
@@ -153,7 +152,7 @@ exports.getCreepRoleMemory = function(role) {
         memory.role = role;
     }
     return memory;
-}
+};
 
 
 // room memory

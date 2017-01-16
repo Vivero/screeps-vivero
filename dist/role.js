@@ -6,6 +6,7 @@
 'use strict';
 
 var Globals = require('globals');
+var Utils = require('utils');
 
 var exports = module.exports = {};
 
@@ -32,7 +33,7 @@ function initialize(creep) {
     // if the state stack is empty, initialize it,
     // but warn because it should never be empty
     if (creep.memory.stateStack.length === 0) {
-        console.log("WARNING! " + creep.name + ": empty state stack!");
+        Utils.warn(creep.name + ".initialize: empty state stack!");
         creep.memory.stateStack = Object.assign({}, Globals.CREEP_MEMORY.stateStack);
     }
 }
