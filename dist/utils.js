@@ -9,6 +9,11 @@ var Globals = require('globals');
 
 var exports = module.exports = {};
 
+exports.debug = function(str) {
+    if (Globals.DEBUG) {
+        console.log('<span style="color:gray;">' + str + '</span>');
+    }
+}
 
 exports.warn = function(str) {
     console.log('<span style="color:yellow;">' + str + '</span>');
