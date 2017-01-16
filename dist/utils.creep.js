@@ -182,6 +182,46 @@ exports.setContainerStoreTarget = function(creep) {
 };
 
 
+exports.setStorageOrContainerWithdrawTarget = function(creep) {
+    // initialize target container
+    var target = null;
+    var found = false;
+
+    // target validation function
+    function validTarget(target) {
+        return ((target.structureType === STRUCTURE_CONTAINER ||
+                 target.structureType === STRUCTURE_STORAGE) &&
+                ('energy' in target.store) &&
+                (target.store.energy > 0));
+    }
+
+    // retrieve from memory
+    if (creep.memory.target !== null) {
+        var structure = Game.getObjectById(creep.memory.target);
+
+        if (Utils.isStructure(structure) && validTarget(structure)) {
+            target = structure;
+            found = true;
+            creep.memory.target = target.id;
+        } else {
+            creep.memory.target = null;
+        }
+    }
+
+    // otherwise find new target
+    if (!found) {
+        target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
+            filter: (structure) => {
+                return validTarget(structure);
+            }
+        });
+        creep.memory.target = (target !== null) ? target.id : null;
+    }
+
+    return target;
+};
+
+
 exports.getStorableTarget = function(creep) {
 
     // target validation function
@@ -189,6 +229,27 @@ exports.getStorableTarget = function(creep) {
         return (target !== null) &&
                (('store' in target && _.sum(target.store) < target.storeCapacity) ||
                 ('energy' in target && target.energy < target.energyCapacity));
+    }
+
+    // retrieve from memory
+    var target = Game.getObjectById(creep.memory.target);
+    if (!validTarget(target)) {
+        target = null;
+        creep.memory.target = null;
+    }
+
+    return target;
+};
+
+
+exports.getWithdrawableTarget = function(creep, resourceType) {
+
+    // target validation function
+    function validTarget(target) {
+        return ((target !== null) &&
+                ('store' in target) &&
+                (resourceType in target.store) &&
+                (target.store[resourceType] > 0));
     }
 
     // retrieve from memory
