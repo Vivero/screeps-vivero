@@ -57,21 +57,21 @@ exports.run = function(room) {
             
             // priority spawns
             //--------------------------
-            if (room.memory.population.harvester.length < 3) {
+            if (room.memory.population.harvester.length < 2) {
                 body = UtilsCreep.getBestBuildableCreepClass(room, 'harvester');
                 mem = Globals.getCreepRoleMemory('harvester');
                 if (spawn.canCreateCreep(body) == OK) {
                     spawn.createCreep(body, undefined, mem);
                 }
 
-            } else if (room.memory.population.upgrader.length < 5) {
+            } else if (room.memory.population.upgrader.length < 2) {
                 body = UtilsCreep.getBestPossibleCreepClass(room, 'upgrader');
                 mem = Globals.getCreepRoleMemory('upgrader');
                 if (spawn.canCreateCreep(body) == OK) {
                     spawn.createCreep(body, undefined, mem);
                 }
 
-            } else if (room.memory.population.builder.length < 2) {
+            } else if (room.memory.population.builder.length < 1) {
                 body = UtilsCreep.getBestPossibleCreepClass(room, 'builder');
                 mem = Globals.getCreepRoleMemory('builder');
                 if (spawn.canCreateCreep(body) == OK) {
