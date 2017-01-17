@@ -147,6 +147,7 @@ FSM[Globals.STATE_UPGRADE] = function(creep) {
 
     // set the room controller as the target
     var target = creep.room.controller;
+    creep.memory.target = target.id;
         
     // move if the target is far
     if (!creep.pos.inRangeTo(target, 3)) {
@@ -184,6 +185,9 @@ FSM[Globals.STATE_MOVE] = function(creep) {
                 Utils.warn(creep.name + ".STATE_MOVE: moveTo failed! (" + err + ")");
             }
         }
+    } else {
+        creep.memory.target = null;
+        creep.memory.stateStack.pop();
     }
 };
 

@@ -70,6 +70,8 @@ exports.findAvailableSource = function(creep) {
         if (sourceInfo !== null &&
             sourceInfo.occupancy < sourceInfo.maxOccupancy) {
             availableSource = source;
+        } else {
+            availableSource = null;
         }
     }
 
@@ -84,14 +86,16 @@ exports.setSourceTarget = function(creep) {
 
     // retrieve from memory
     var source = Game.getObjectById(creep.memory.target);
-    var sourceInfo = (source !== null) ? Utils.getCachedSourceInfoInRoom(source.id, creep.room) : null;
-    if ((sourceInfo !== null) &&
-        (source.energy > 0) &&
-        (sourceInfo.occupancy < sourceInfo.maxOccupancy)) {
+    if (source !== null) {
+        var sourceInfo = Utils.getCachedSourceInfoInRoom(source.id, creep.room);
+        if ((sourceInfo !== null) &&
+            (source.energy > 0) &&
+            (sourceInfo.occupancy < sourceInfo.maxOccupancy)) {
 
-        found = true;
-        target = source;
-        creep.memory.target = source.id;
+            found = true;
+            target = source;
+            creep.memory.target = source.id;
+        }
     }
 
     // otherwise find new target

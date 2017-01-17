@@ -148,6 +148,9 @@ FSM[Globals.STATE_MOVE] = function(creep) {
                 Utils.warn(creep.name + ".STATE_MOVE: moveTo failed! (" + err + ")");
             }
         }
+    } else {
+        creep.memory.target = null;
+        creep.memory.stateStack.pop();
     }
 };
 
