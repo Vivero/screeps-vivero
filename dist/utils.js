@@ -13,10 +13,14 @@ exports.debug = function(str) {
     if (Globals.DEBUG) {
         console.log('<span style="color:gray;">' + str + '</span>');
     }
-}
+};
 
 exports.warn = function(str) {
     console.log('<span style="color:yellow;">' + str + '</span>');
+};
+
+exports.err = function(str) {
+    console.log('<span style="color:red;">' + str + '</span>');
 };
 
 
