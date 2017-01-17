@@ -50,7 +50,12 @@ exports.run = function(creep) {
     }
 
     // run the role's state machine
-    roles[creep.memory.role].run(creep);
+    try {
+        roles[creep.memory.role].run(creep);
+    } catch (e) {
+        Utils.err(creep.name + " (" + creep.memory.role + ") unexpected exception!\n" + e.stack);
+    }
+    
 
     // end
     creep.memory.statePrev = startingState;
