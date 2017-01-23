@@ -129,7 +129,7 @@ function setStructureTarget(creep, validTarget) {
 
     // otherwise find new target
     if (!found) {
-        target = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
+        target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
             filter: (structure) => {
                 return validTarget(structure);
             }
@@ -178,6 +178,18 @@ exports.setStorageStoreTarget = function(creep) {
 };
 
 
+exports.setTowerStoreTarget = function(creep) {
+    
+    // target validation function
+    var validTarget = function(target) { 
+        return ((target.structureType === STRUCTURE_TOWER) &&
+                (target.energy < target.energyCapacity));
+    };
+
+    return setStructureTarget(creep, validTarget);
+};
+
+
 exports.setStorageOrContainerWithdrawTarget = function(creep) {
     
     // target validation function
@@ -189,6 +201,79 @@ exports.setStorageOrContainerWithdrawTarget = function(creep) {
     };
 
     return setStructureTarget(creep, validTarget);
+};
+
+
+exports.setBuildTarget = function(creep) {
+    // initialize target spawn/extension
+    var target = null;
+    var found = false;
+
+    // retrieve from memory
+    if (creep.memory.target !== null) {
+        var site = Game.getObjectById(creep.memory.target);
+
+        if ('progress' in site) {
+            target = site;
+            found = true;
+        }
+        creep.memory.target = found ? target.id : null;
+    }
+
+    // otherwise find new target
+    if (!found) {
+        target = creep.pos.findClosestByRange(FIND_CONSTRUCTION_SITES, {
+            filter: (site) => {
+                return site.my;
+            }
+        });
+        creep.memory.target = (target !== null) ? target.id : null;
+    }
+
+    return target;
+};
+
+
+exports.setRepairTarget = function(creep) {
+    // initialize target spawn/extension
+    var target = null;
+    var found = false;
+
+    // target validation function
+    function validTarget(target) { 
+        return (structure.structureType === STRUCTURE_WALL && 
+                structure.hits < Globals.MAX_WALL_LEVEL) ||
+               (structure.structureType === STRUCTURE_RAMPART && 
+                structure.hits < Globals.MAX_RAMPART_LEVEL) || 
+               (structure.hits < structure.hitsMax);
+    }
+
+    // retrieve from memory
+    if (creep.memory.target !== null) {
+        var structure = Game.getObjectById(creep.memory.target);
+
+        if (Utils.isStructure(structure) && validTarget(structure)) {
+            target = structure;
+            found = true;
+        }
+        creep.memory.target = found ? target.id : null;
+    }
+
+    // otherwise find new target
+    if (!found) {
+        target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
+            filter: (structure) => {
+                return  (structure.structureType === STRUCTURE_WALL && 
+                         structure.hits < Globals.MAX_WALL_LEVEL) ||
+                        (structure.structureType === STRUCTURE_RAMPART && 
+                         structure.hits < Globals.MAX_RAMPART_LEVEL) || 
+                        (structure.hits < (structure.hitsMax * Globals.REPAIR_THRESHOLD_PCT));
+            }
+        });
+        creep.memory.target = (target !== null) ? target.id : null;
+    }
+
+    return target;
 };
 
 

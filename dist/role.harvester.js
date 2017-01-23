@@ -20,13 +20,13 @@ function storageTarget(creep) {
 
     // find container
     var target = UtilsCreep.setContainerStoreTarget(creep);
-
+    
     // or a storage if no container found
     target = (target === null) ? UtilsCreep.setStorageStoreTarget(creep) : target;
-
+    
     // or a spawn if no storage found
     target = (target === null) ? UtilsCreep.setSpawnOrExtensionStoreTarget(creep) : target;
-
+    
     // return true if a target was found (it will be set in creep memory)
     return (target !== null);
 }
