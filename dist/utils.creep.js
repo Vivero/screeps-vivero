@@ -111,17 +111,10 @@ exports.setSourceTarget = function(creep) {
 };
 
 
-exports.setSpawnOrExtensionStoreTarget = function(creep) {
+function setStructureTarget(creep, validTarget) {
     // initialize target spawn/extension
     var target = null;
     var found = false;
-
-    // target validation function
-    function validTarget(target) {
-        return ((target.structureType === STRUCTURE_SPAWN ||
-                 target.structureType === STRUCTURE_EXTENSION) &&
-                (target.energy < target.energyCapacity));
-    }
 
     // retrieve from memory
     if (creep.memory.target !== null) {
@@ -145,84 +138,57 @@ exports.setSpawnOrExtensionStoreTarget = function(creep) {
     }
 
     return target;
+}
+
+
+exports.setSpawnOrExtensionStoreTarget = function(creep) {
+    
+    // target validation function
+    var validTarget = function(target) { 
+        return ((target.structureType === STRUCTURE_SPAWN ||
+                 target.structureType === STRUCTURE_EXTENSION) &&
+                (target.energy < target.energyCapacity));
+    };
+
+    return setStructureTarget(creep, validTarget);
 };
 
 
 exports.setContainerStoreTarget = function(creep) {
-    // initialize target container
-    var target = null;
-    var found = false;
-
+    
     // target validation function
-    function validTarget(target) {
+    var validTarget = function(target) { 
         return ((target.structureType === STRUCTURE_CONTAINER) &&
                 (_.sum(target.store) < target.storeCapacity));
-    }
+    };
 
-    // retrieve from memory
-    if (creep.memory.target !== null) {
-        var structure = Game.getObjectById(creep.memory.target);
+    return setStructureTarget(creep, validTarget);
+};
 
-        if (Utils.isStructure(structure) && validTarget(structure)) {
-            target = structure;
-            found = true;
-            creep.memory.target = target.id;
-        } else {
-            creep.memory.target = null;
-        }
-    }
 
-    // otherwise find new target
-    if (!found) {
-        target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
-            filter: (structure) => {
-                return validTarget(structure);
-            }
-        });
-        creep.memory.target = (target !== null) ? target.id : null;
-    }
+exports.setStorageStoreTarget = function(creep) {
+    
+    // target validation function
+    var validTarget = function(target) { 
+        return ((target.structureType === STRUCTURE_STORAGE) &&
+                (_.sum(target.store) < target.storeCapacity));
+    };
 
-    return target;
+    return setStructureTarget(creep, validTarget);
 };
 
 
 exports.setStorageOrContainerWithdrawTarget = function(creep) {
-    // initialize target container
-    var target = null;
-    var found = false;
-
+    
     // target validation function
-    function validTarget(target) {
+    var validTarget = function(target) { 
         return ((target.structureType === STRUCTURE_CONTAINER ||
                  target.structureType === STRUCTURE_STORAGE) &&
                 ('energy' in target.store) &&
                 (target.store.energy > 0));
-    }
+    };
 
-    // retrieve from memory
-    if (creep.memory.target !== null) {
-        var structure = Game.getObjectById(creep.memory.target);
-
-        if (Utils.isStructure(structure) && validTarget(structure)) {
-            target = structure;
-            found = true;
-            creep.memory.target = target.id;
-        } else {
-            creep.memory.target = null;
-        }
-    }
-
-    // otherwise find new target
-    if (!found) {
-        target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
-            filter: (structure) => {
-                return validTarget(structure);
-            }
-        });
-        creep.memory.target = (target !== null) ? target.id : null;
-    }
-
-    return target;
+    return setStructureTarget(creep, validTarget);
 };
 
 
