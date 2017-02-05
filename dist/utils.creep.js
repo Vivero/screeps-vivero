@@ -63,15 +63,23 @@ exports.findAvailableSource = function(creep) {
 
     // otherwise find new source
     if (!availableSource) {
-        var source = creep.pos.findClosestByRange(FIND_SOURCES_ACTIVE);
-        var sourceInfo = Utils.getCachedSourceInfoInRoom(source.id, creep.room);
+        var rangeToSources = [];
+        for (var s in creep.room.memory.sources) {
+            var sourceInfo = creep.room.memory.sources[s];
+            var source = Game.getObjectById(sourceInfo.id);
+            rangeToSources.push([sourceInfo, creep.pos.getRangeTo(source)]);
+        }
+        var sortedSources = _.sortBy(rangeToSources, [function (s) {
+                return s[1];
+            }]);
 
-        // check source occupancy
-        if (sourceInfo !== null &&
-            sourceInfo.occupancy < sourceInfo.maxOccupancy) {
-            availableSource = source;
-        } else {
-            availableSource = null;
+        availableSource = null;
+        for (var s in sortedSources) {
+            var info = sortedSources[s][0];
+            if (info.occupancy < info.maxOccupancy) {
+                availableSource = Game.getObjectById(info.id);
+                break;
+            }
         }
     }
 
@@ -210,13 +218,14 @@ exports.setBuildTarget = function(creep) {
     var found = false;
 
     // retrieve from memory
-    if (creep.memory.target !== null) {
-        var site = Game.getObjectById(creep.memory.target);
+    if (creep.memory.buildTarget !== null) {
+        var site = Game.getObjectById(creep.memory.buildTarget);
 
-        if ('progress' in site) {
+        if (site !== null && 'progress' in site) {
             target = site;
             found = true;
         }
+        creep.memory.buildTarget = found ? target.id : null;
         creep.memory.target = found ? target.id : null;
     }
 
@@ -227,6 +236,7 @@ exports.setBuildTarget = function(creep) {
                 return site.my;
             }
         });
+        creep.memory.buildTarget = (target !== null) ? target.id : null;
         creep.memory.target = (target !== null) ? target.id : null;
     }
 
@@ -245,31 +255,47 @@ exports.setRepairTarget = function(creep) {
                 structure.hits < Globals.MAX_WALL_LEVEL) ||
                (structure.structureType === STRUCTURE_RAMPART && 
                 structure.hits < Globals.MAX_RAMPART_LEVEL) || 
-               (structure.hits < structure.hitsMax);
+               (structure.structureType !== STRUCTURE_WALL &&
+                structure.structureType !== STRUCTURE_RAMPART &&
+                structure.hits < structure.hitsMax);
     }
 
     // retrieve from memory
-    if (creep.memory.target !== null) {
-        var structure = Game.getObjectById(creep.memory.target);
+    if (creep.memory.repairTarget !== null) {
+        var structure = Game.getObjectById(creep.memory.repairTarget);
 
         if (Utils.isStructure(structure) && validTarget(structure)) {
             target = structure;
             found = true;
         }
+        creep.memory.reapirTarget = found ? target.id : null;
         creep.memory.target = found ? target.id : null;
     }
 
     // otherwise find new target
     if (!found) {
+        // prioritize ramparts with 1 hit
         target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
             filter: (structure) => {
-                return  (structure.structureType === STRUCTURE_WALL && 
-                         structure.hits < Globals.MAX_WALL_LEVEL) ||
-                        (structure.structureType === STRUCTURE_RAMPART && 
-                         structure.hits < Globals.MAX_RAMPART_LEVEL) || 
-                        (structure.hits < (structure.hitsMax * Globals.REPAIR_THRESHOLD_PCT));
+                return  (structure.structureType === STRUCTURE_RAMPART && 
+                         structure.hits == 1);
             }
         });
+        // if none, look for other repairables
+        if (target === null) {
+            target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
+                filter: (structure) => {
+                    return  (structure.structureType === STRUCTURE_WALL && 
+                             structure.hits < Globals.MAX_WALL_LEVEL) ||
+                            (structure.structureType === STRUCTURE_RAMPART && 
+                             structure.hits < Globals.MAX_RAMPART_LEVEL) || 
+                            (structure.structureType !== STRUCTURE_WALL &&
+                             structure.structureType !== STRUCTURE_RAMPART &&
+                             structure.hits < (structure.hitsMax * Globals.REPAIR_THRESHOLD_PCT));
+                }
+            });
+        }
+        creep.memory.repairTarget = (target !== null) ? target.id : null;
         creep.memory.target = (target !== null) ? target.id : null;
     }
 

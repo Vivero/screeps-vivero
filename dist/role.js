@@ -22,12 +22,14 @@ function initialize(creep) {
     // something could've gone wrong with the creep's
     // memory, so just wipe it
     var missing = false;
-    for (var f in Globals.CREEP_MEMORY) {
+    var blankMemory = Globals.getCreepRoleMemory(creep.role);
+    for (var f in blankMemory) {
         missing = !(f in creep.memory);
         if (missing) break;
     }
     if (missing) {
-        creep.memory = Object.assign({}, Globals.CREEP_MEMORY);
+        Utils.warn(creep.name + ".initialize: memory was corrupted!");
+        creep.memory = blankMemory;
     }
 
     // if the state stack is empty, initialize it,
@@ -45,7 +47,7 @@ exports.run = function(creep) {
     var startingState = creep.memory.stateStack[creep.memory.stateStack.length - 1];
 
     // announce change in state
-    if (startingState != creep.memory.statePrev) {
+    if (startingState != Globals.STATE_IDLE && startingState != creep.memory.statePrev) {
         creep.say(Globals.STATE_STRING[startingState]);
     }
 

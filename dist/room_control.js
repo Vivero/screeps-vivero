@@ -83,22 +83,6 @@ exports.run = function(room) {
     }
 
 
-    // SURVEY CREEP POPULATION
-    //==============================
-    room.memory.population = Object.assign({}, Globals.ROOM_MEMORY_OBJS.population);
-    var creeps = room.find(FIND_MY_CREEPS, {
-        filter: (creep) => {
-            return (!creep.spawning);
-        }
-    });
-    for (var c in creeps) {
-        var creep = creeps[c];
-        if (!(_.includes(room.memory.population[creep.memory.role], creep.id))) {
-            room.memory.population[creep.memory.role].push(creep.id);
-        }
-    }
-
-
     // PROCESS COMMANDS BUFFER
     //==============================
     if (room.memory.commands.spawnSpecial) {
@@ -125,7 +109,7 @@ exports.run = function(room) {
     for (var p in room.memory.population) {
         for (var c in room.memory.population[p]) {
             var creep = Game.getObjectById(room.memory.population[p][c]);
-            if (creep !== null) {
+            if (creep !== null && !creep.spawning) {
                 Role.run(creep);
             }
         }

@@ -62,11 +62,11 @@ FSM[Globals.STATE_IDLE] = function(creep) {
 
     // if carrying energy, use it
     if (creep.carry.energy > 0) {
-        if (buildTarget(creep)) {
-            creep.memory.stateStack.push(Globals.STATE_BUILD);
-            return;
-        } else if (repairTarget(creep)) {
+        if (repairTarget(creep)) {
             creep.memory.stateStack.push(Globals.STATE_REPAIR);
+            return;
+        } else if (buildTarget(creep)) {
+            creep.memory.stateStack.push(Globals.STATE_BUILD);
             return;
         }
     }
@@ -83,9 +83,13 @@ FSM[Globals.STATE_IDLE] = function(creep) {
     }
 
     // if not, go hang out at the controller
-    creep.memory.target = creep.room.controller.id;
-    creep.memory.moveRange = 3;
-    creep.memory.stateStack.push(Globals.STATE_MOVE);
+    if (!creep.pos.inRangeTo(creep.room.controller, 5)) {
+        creep.memory.target = creep.room.controller.id;
+        creep.memory.moveRange = 5;
+        creep.memory.stateStack.push(Globals.STATE_MOVE);
+    } else {
+        creep.memory.target = null;
+    }
 };
 
 // STATE_WITHDRAW
@@ -155,6 +159,8 @@ FSM[Globals.STATE_HARVEST] = function(creep) {
             creep.memory.target = null;
             creep.memory.stateStack.pop();
             Utils.warn(creep.name + ".STATE_HARVEST: harvest failed! (" + err + ")");
+        } else {
+            creep.room.memory.stats.energyIntake += 2;
         }
     } else {
         creep.memory.target = null;
@@ -190,8 +196,11 @@ FSM[Globals.STATE_BUILD] = function(creep) {
             creep.memory.target = null;
             creep.memory.stateStack.pop();
             Utils.warn(creep.name + ".STATE_BUILD: build failed! (" + err + ")");
+        } else {
+            creep.room.memory.stats.energySpent += 5;
         }
     } else {
+        creep.memory.buildTarget = null;
         creep.memory.target = null;
         creep.memory.stateStack.pop();
     }
@@ -227,6 +236,7 @@ FSM[Globals.STATE_REPAIR] = function(creep) {
             Utils.warn(creep.name + ".STATE_REPAIR: repair failed! (" + err + ")");
         }
     } else {
+        creep.memory.repairTarget = null;
         creep.memory.target = null;
         creep.memory.stateStack.pop();
     }

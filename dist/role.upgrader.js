@@ -127,6 +127,8 @@ FSM[Globals.STATE_HARVEST] = function(creep) {
             creep.memory.target = null;
             creep.memory.stateStack.pop();
             Utils.warn(creep.name + ".STATE_HARVEST: harvest failed! (" + err + ")");
+        } else {
+            creep.room.memory.stats.energyIntake += 2;
         }
     } else {
         creep.memory.target = null;
@@ -160,6 +162,8 @@ FSM[Globals.STATE_UPGRADE] = function(creep) {
         creep.memory.target = null;
         creep.memory.stateStack.pop();
         Utils.warn(creep.name + ".STATE_UPGRADE: upgradeController failed! (" + err + ")");
+    } else {
+        creep.room.memory.stats.energySpent += 1;
     }
 };
 
@@ -179,10 +183,12 @@ FSM[Globals.STATE_MOVE] = function(creep) {
             creep.memory.stateStack.pop();
         } else {
             var err = creep.moveTo(target);
-            if (err !== OK && err !== ERR_TIRED && err !== ERR_NO_PATH) {
+            if (err !== OK && err !== ERR_TIRED) {
                 creep.memory.target = null;
                 creep.memory.stateStack.pop();
-                Utils.warn(creep.name + ".STATE_MOVE: moveTo failed! (" + err + ")");
+                if (err !== ERR_NO_PATH) {
+                    Utils.warn(creep.name + ".STATE_MOVE: moveTo failed! (" + err + ")");
+                }
             }
         }
     } else {

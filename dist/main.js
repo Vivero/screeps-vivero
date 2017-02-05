@@ -14,6 +14,19 @@ function initialize() {
     if (!('commands' in Memory)) {
         Memory.commands = Object.assign({}, Globals.GAME_MEMORY.commands);
     }
+
+
+    // survey the creep population
+    for (var r in Game.rooms) {
+        Game.rooms[r].memory.population = Object.assign({}, Globals.ROOM_MEMORY_OBJS.population);
+    }
+    for (var c in Game.creeps) {
+        var creep = Game.creeps[c];
+        var room = creep.room;
+        if (!(_.includes(room.memory.population[creep.memory.role], creep.id))) {
+            room.memory.population[creep.memory.role].push(creep.id);
+        }
+    }
 }
 
 function cleanup() {
