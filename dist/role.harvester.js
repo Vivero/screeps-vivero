@@ -21,13 +21,14 @@ var workParts = 0;
 // find a potential storage target, and set it as the creep's target
 function storageTarget(creep) {
 
-    // find container
-    var target = UtilsCreep.setContainerStoreTarget(creep);
+    // find container or spawn or extension
+    //var target = UtilsCreep.setContainerStoreTarget(creep);
+    var target = UtilsCreep.setSpawnExtensionContainerStoreTarget(creep);
     
-    // or a spawn if no storage found
-    target = (target === null) ? UtilsCreep.setSpawnOrExtensionStoreTarget(creep) : target;
+    // or spawn or extension
+    //target = (target === null) ? UtilsCreep.setSpawnOrExtensionStoreTarget(creep) : target;
     
-    // or a storage if no container found
+    // or storage
     target = (target === null) ? UtilsCreep.setStorageStoreTarget(creep) : target;
     
     // return true if a target was found (it will be set in creep memory)
