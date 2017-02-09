@@ -14,6 +14,9 @@ var exports = module.exports = {};
 // finite state machine
 var FSM = {};
 
+// declares the end of this tick cycle
+var cycleComplete = false;
+
 
 // find a potential storage target, and set it as the creep's target
 function storageTarget(creep, includeStorage) {
@@ -91,7 +94,7 @@ FSM[Globals.STATE_IDLE] = function(creep) {
         return;
     }
 
-    // if not, go hang out at a spawn
+    // go hang out at a spawn
     var targets = creep.room.find(FIND_MY_SPAWNS);
     if (targets.length && !creep.pos.inRangeTo(targets[0], 5)) {
         creep.memory.target = targets[0].id;
@@ -101,8 +104,10 @@ FSM[Globals.STATE_IDLE] = function(creep) {
         creep.memory.target = null;
     }
 
-    // increase the idle tick cycles counter for distributors in this room
+    // increase the idle tick cycles counter for distributors in this room if we reach this point
     creep.room.memory.stats.creepCycleCounter.distributor.idle += 1;
+
+    cycleComplete = true;
 };
 
 // STATE_WITHDRAW
@@ -138,6 +143,7 @@ FSM[Globals.STATE_WITHDRAW] = function(creep) {
             creep.memory.stateStack.pop();
             Utils.warn(creep.name + ".STATE_WITHDRAW: withdraw failed! (" + err + ")");
         }
+        cycleComplete = true;
     } else {
         creep.memory.target = null;
         creep.memory.stateStack.pop();
@@ -176,6 +182,7 @@ FSM[Globals.STATE_STORE] = function(creep) {
             creep.memory.stateStack.pop();
             Utils.warn(creep.name + ".STATE_STORE: transfer failed! (" + err + ")");
         }
+        cycleComplete = true;
     } else {
         creep.memory.target = null;
         creep.memory.stateStack.pop();
@@ -203,6 +210,7 @@ FSM[Globals.STATE_MOVE] = function(creep) {
                 creep.memory.stateStack.pop();
                 Utils.warn(creep.name + ".STATE_MOVE: moveTo failed! (" + err + ")");
             }
+            cycleComplete = true;
         }
     } else {
         creep.memory.target = null;
@@ -240,6 +248,7 @@ FSM[Globals.STATE_PICKUP] = function(creep) {
             creep.memory.stateStack.pop();
             Utils.warn(creep.name + ".STATE_PICKUP: pickup failed! (" + err + ")");
         }
+        cycleComplete = true;
     } else {
         creep.memory.target = null;
         creep.memory.stateStack.pop();
@@ -248,11 +257,27 @@ FSM[Globals.STATE_PICKUP] = function(creep) {
 
 exports.run = function(creep) {
 
+    // get the current state to run
+    cycleComplete = false
+    var stateCounter = 0;
+
     // increase the tick cycles counter for distributors in this room
     creep.room.memory.stats.creepCycleCounter.distributor.total += 1;
 
+    console.log(creep.name + ": stack " + creep.memory.stateStack.length + " ----------");
+
     // run the current state
-    FSM[creep.memory.stateStack[creep.memory.stateStack.length - 1]](creep);
+    while (!cycleComplete) {
+        var currentState = creep.memory.stateStack[creep.memory.stateStack.length - 1];
+        console.log(creep.name + ": running " + Globals.STATE_STRING[currentState]);
+        FSM[currentState](creep);
+        stateCounter++;
+        if (stateCounter >= 10) {
+            Utils.warn(creep.name + " got stuck!");
+            break;
+        }
+    }
+    
 
     // return the latest state
     return creep.memory.stateStack[creep.memory.stateStack.length - 1];
