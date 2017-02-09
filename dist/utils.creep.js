@@ -178,6 +178,24 @@ exports.setSpawnOrExtensionStoreTarget = function(creep) {
 };
 
 
+exports.setSpawnExtensionContainerStoreTarget = function(creep) {
+    
+    // target validation function
+    var validTarget = function(target) { 
+        var isSpawnExtension = 
+            (target.structureType === STRUCTURE_SPAWN ||
+             target.structureType === STRUCTURE_EXTENSION) &&
+            (target.energy < target.energyCapacity);
+        var isContainer = 
+            (target.structureType === STRUCTURE_CONTAINER) &&
+            (_.sum(target.store) < target.storeCapacity);
+        return isSpawnExtension || isContainer;
+    };
+
+    return setStructureTarget(creep, validTarget);
+};
+
+
 exports.setSpawnStoreTarget = function(creep) {
     
     // target validation function
