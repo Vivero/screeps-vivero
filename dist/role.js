@@ -38,6 +38,16 @@ function initialize(creep) {
         Utils.warn(creep.name + ".initialize: empty state stack!");
         creep.memory.stateStack = Object.assign({}, Globals.CREEP_MEMORY.stateStack);
     }
+
+    // display visuals
+    /*try {
+        var textPos = creep.pos;
+        textPos.x += 0.2;
+        textPos.y -= 0.4;
+        creep.room.visual.text(Globals.CREEP_EMOJI[creep.memory.role], textPos, {size: 0.4});
+    } catch (e) {
+        Utils.err(creep.name + " (" + creep.memory.role + ") visuals exception!");
+    }*/
 }
 
 exports.run = function(creep) {
