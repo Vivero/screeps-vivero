@@ -161,9 +161,9 @@ exports.run = function(room) {
         console.log('<span style="color:yellow;">' + "=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/\n" + '</span>');
 
         console.log("* Last Time            " + room.memory.stats.lastExecTime);
-        console.log("*");
-        console.log("* Energy Intake        " + room.memory.stats.energyIntake);
-        console.log("* Energy Spent         " + room.memory.stats.energySpent);
+        //console.log("*");
+        //console.log("* Energy Intake        " + room.memory.stats.energyIntake);
+        //console.log("* Energy Spent         " + room.memory.stats.energySpent);
         console.log("*");
         console.log("* Energy Intake Rate   " + room.memory.stats.energyIntakeAvg);
         console.log("* Energy Spent Rate    " + room.memory.stats.energySpentAvg);

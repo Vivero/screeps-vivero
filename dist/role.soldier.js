@@ -44,9 +44,10 @@ FSM[Globals.STATE_IDLE] = function(creep) {
         return;
     }
 
-    // if not, go hang out at the controller
-    if (!creep.pos.inRangeTo(creep.room.controller, 5)) {
-        creep.memory.target = creep.room.controller.id;
+    // if not, go hang out at a spawn
+    var targets = creep.room.find(FIND_MY_SPAWNS);
+    if (targets.length && !creep.pos.inRangeTo(targets[0], 5)) {
+        creep.memory.target = targets[0].id;
         creep.memory.targetRange = 5;
         creep.memory.stateStack.push(Globals.STATE_MOVE);
     } else {
@@ -65,6 +66,7 @@ FSM[Globals.STATE_ATTACK] = function(creep) {
         
         // move if the target is far
         if (!creep.pos.inRangeTo(target, 1)) {
+            creep.memory.targetRange = 1;
             creep.memory.stateStack.push(Globals.STATE_MOVE);
             return;
         }
@@ -87,8 +89,13 @@ FSM[Globals.STATE_MOVE] = function(creep) {
 
     // move to object if it's far away
     var target = Game.getObjectById(creep.memory.target);
+
     if (target !== null) {
-        if (creep.pos.inRangeTo(target, 1)) {
+
+        // how far away should we approach the target
+        var range = creep.memory.targetRange;
+        
+        if (creep.pos.inRangeTo(target, range)) {
             creep.memory.stateStack.pop();
         } else {
             var err = creep.moveTo(target);
