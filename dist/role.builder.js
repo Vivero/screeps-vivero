@@ -286,6 +286,14 @@ exports.run = function(creep) {
     // get creep stats
     workParts = UtilsCreep.getBodyPartTypeCount(creep, WORK);
 
+    // visualize build target
+    if (creep.memory.buildTarget !== null) {
+        var target = Game.getObjectById(creep.memory.buildTarget);
+        if (target !== null) {
+            creep.room.visual.text("\u2692", target.pos);
+        }
+    }
+
     // increase the tick cycles counter for builders in this room
     creep.room.memory.stats.creepCycleCounter.builder.total += 1;
 
