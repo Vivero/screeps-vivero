@@ -7,6 +7,7 @@
 
 var Globals = require('globals');
 var RoomControl = require('room_control');
+var Utils = require('utils');
 
 function initialize() {
 
@@ -36,6 +37,11 @@ function cleanup() {
             delete Memory.creeps[name];
             console.log("Clearing creep memory: ", name);
         }
+    }
+
+    // check for CPU overruns
+    if (Game.cpu.getUsed() > (Game.cpu.tickLimit * 0.9)) {
+        Utils.err("WARNING: CPU OVERRUN! used: " + Game.cpu.getUsed().toFixed(2) + ", limit: " + Game.cpu.tickLimit + ", bucket: " + Game.cpu.bucket);
     }
 }
 
