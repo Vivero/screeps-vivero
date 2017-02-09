@@ -62,9 +62,9 @@ FSM[Globals.STATE_IDLE] = function(creep) {
     }
 
     // if not, go hang out at the nearest source
-    var source = creep.pos.findClosestByRange(FIND_SOURCES);
-    if (!creep.pos.inRangeTo(source, 5)) {
-        creep.memory.target = source.id;
+    var targets = creep.room.find(FIND_MY_SPAWNS);
+    if (targets.length && !creep.pos.inRangeTo(targets[0], 5)) {
+        creep.memory.target = targets[0].id;
         creep.memory.targetRange = 5;
         creep.memory.stateStack.push(Globals.STATE_MOVE);
     } else {
