@@ -91,10 +91,11 @@ FSM[Globals.STATE_IDLE] = function(creep) {
         return;
     }
 
-    // if not, go hang out at the controller
-    if (!creep.pos.inRangeTo(creep.room.controller, 5)) {
-        creep.memory.target = creep.room.controller.id;
-        creep.memory.targetRange = 5;
+    // if not, go hang out at a spawn
+    var targets = creep.room.find(FIND_MY_SPAWNS);
+    if (targets.length && !creep.pos.inRangeTo(targets[0], 5)) {
+        creep.memory.target = targets[0].id;
+        creep.memory.targetRange = 3;
         creep.memory.stateStack.push(Globals.STATE_MOVE);
     } else {
         creep.memory.target = null;
