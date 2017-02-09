@@ -67,19 +67,6 @@ exports.ACTION_REPAIRING    = 1020;
 // CREEPS
 //==============================================================================
 
-// creep body part costs
-/*
- * MOVE     = 50
- * WORK     = 100
- * CARRY    = 50
- * ATTACK   = 80
- * R_ATTACK = 150
- * HEAL     = 250
- * CLAIM    = 600
- * TOUGH    = 10
- *
-**/
-
 // creep body types
 //--------------------------------------
 
@@ -108,9 +95,34 @@ exports.CREEP_ROLES = [
 ];
 
 
+exports.CREEP_EMOJI = {
+    harvester:      "\u26CF", // pickaxe
+    upgrader:       "\u2B50", // star
+    builder:        String.fromCodePoint(0x1F6E0), // hammer and wrench
+    reclaimer:      "\u{1F3F3}", // white flag
+    distributor:    "\u267B", // recycle
+    soldier:        "\u2694", // swords
+    special:        "\u2618", // clover
+};
+
+
+// creep body part costs
+/*
+ * MOVE     = 50
+ * WORK     = 100
+ * CARRY    = 50
+ * ATTACK   = 80
+ * R_ATTACK = 150
+ * HEAL     = 250
+ * CLAIM    = 600
+ * TOUGH    = 10
+ *
+**/
+
 exports.CREEP_CLASS = {
     harvester: [
         bodyPartMaker(WORK, 1, CARRY, 2, MOVE, 2), // 300
+        bodyPartMaker(WORK, 2, CARRY, 2, MOVE, 2), // 400
         bodyPartMaker(WORK, 3, CARRY, 3, MOVE, 3), // 600
         bodyPartMaker(WORK, 4, CARRY, 4, MOVE, 4), // 800
     ],
