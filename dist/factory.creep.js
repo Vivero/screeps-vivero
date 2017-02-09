@@ -55,6 +55,7 @@ exports.run = function(room) {
         var builderIdleFraction = (room.memory.stats.creepCycleCounter.builder.total > 0) ? room.memory.stats.creepCycleCounter.builder.idle / room.memory.stats.creepCycleCounter.builder.total : 1.0;
         if (builderIdleFraction < 0.10) {
             room.memory.spawnQueueLoPriority.push('builder');
+            room.memory.spawnQueueLoPriority.push('builder');
         }
 
         // spawn distributors
@@ -64,7 +65,7 @@ exports.run = function(room) {
         }
 
         // spawn upgraders
-        for (var i = population.upgrader; i < room.controller.level; i++)
+        for (var i = population.upgrader; i <= room.controller.level; i++)
             room.memory.spawnQueueLoPriority.push('upgrader');
         //----------------------------------------------------------------------
 
