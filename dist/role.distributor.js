@@ -95,7 +95,7 @@ FSM[Globals.STATE_IDLE] = function(creep) {
     }
 
     // go hang out at a spawn
-    var range = 10;
+    var range = 8;
     //var targets = creep.room.find(FIND_MY_SPAWNS);
     //if (targets.length && !creep.pos.inRangeTo(targets[0], range)) {
     //    creep.memory.target = targets[0].id;
