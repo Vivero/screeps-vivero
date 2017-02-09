@@ -18,13 +18,13 @@ exports.run = function(room) {
 
     // determine population levels
     var population = {};
-    var spawnQueueCount = _.countBy(room.memory.spawnQueue, 'role');
+    var spawnQueueHPCount = _.countBy(room.memory.spawnQueueHiPriority);
+    var spawnQueueLPCount = _.countBy(room.memory.spawnQueueLoPriority);
     for (var r in Globals.CREEP_ROLES) {
         var role = Globals.CREEP_ROLES[r];
         population[role] = room.memory.population[role].length;
-        if (role in spawnQueueCount) {
-            population[role] += spawnQueueCount[role];
-        }
+        if (role in spawnQueueHPCount) population[role] += spawnQueueHPCount[role];
+        if (role in spawnQueueLPCount) population[role] += spawnQueueLPCount[role];
     }
 
     // calculate statistics
@@ -33,21 +33,48 @@ exports.run = function(room) {
     if ((currentTime - lastExecTime) >= Globals.ROOM_ENERGY_AVERAGE_TIME) {
         room.memory.stats.lastExecTime = currentTime;
 
-        room.memory.stats.energyIntakeAvg = (room.memory.stats.energyIntake - room.memory.stats.energyIntakePrev) / 
+        room.memory.stats.energyIntakeAvg = room.memory.stats.energyIntake / 
             Globals.ROOM_ENERGY_AVERAGE_TIME;
-        room.memory.stats.energySpentAvg = (room.memory.stats.energySpent - room.memory.stats.energySpentPrev) / Globals.ROOM_ENERGY_AVERAGE_TIME;
+        room.memory.stats.energySpentAvg = room.memory.stats.energySpent / Globals.ROOM_ENERGY_AVERAGE_TIME;
 
         room.memory.stats.energyNetAverage = room.memory.stats.energyIntakeAvg - room.memory.stats.energySpentAvg;
 
-        room.memory.stats.energyIntakePrev = room.memory.stats.energyIntake;
-        room.memory.stats.energySpentPrev = room.memory.stats.energySpent;
-
 
         // statistics-based spawning
+        //----------------------------------------------------------------------
+        
+        // spawn harvesters
         //var maxRoomEnergyExtractionRate = room.memory.source.length * 10;
         var maxRoomEnergyExtractionRate = 10;
         if (room.memory.stats.energyIntakeAvg < maxRoomEnergyExtractionRate) {
-            room.memory.spawnQueue.push(new Globals.SpawnRequest('harvester', false));
+            room.memory.spawnQueueLoPriority.push('harvester');
+            room.memory.spawnQueueLoPriority.push('harvester');
+        }
+
+        // spawn builders
+        var builderIdleFraction = (room.memory.stats.creepCycleCounter.builder.total > 0) ? room.memory.stats.creepCycleCounter.builder.idle / room.memory.stats.creepCycleCounter.builder.total : 1.0;
+        if (builderIdleFraction < 0.10) {
+            room.memory.spawnQueueLoPriority.push('builder');
+        }
+
+        // spawn distributors
+        var distributorIdleFraction = (room.memory.stats.creepCycleCounter.distributor.total > 0) ? room.memory.stats.creepCycleCounter.distributor.idle / room.memory.stats.creepCycleCounter.distributor.total : 1.0;
+        if (distributorIdleFraction < 0.10) {
+            room.memory.spawnQueueLoPriority.push('distributor');
+        }
+
+        // spawn upgraders
+        for (var i = population.upgrader; i < room.controller.level; i++)
+            room.memory.spawnQueueLoPriority.push('upgrader');
+        //----------------------------------------------------------------------
+
+        // reset statistics
+        room.memory.stats.energyIntake = 0;
+        room.memory.stats.energySpent = 0;
+        for (var r in Globals.CREEP_ROLES) {
+            var role = Globals.CREEP_ROLES[r];
+            room.memory.stats.creepCycleCounter[role].idle = 0;
+            room.memory.stats.creepCycleCounter[role].total = 0;
         }
     }
 
@@ -64,41 +91,61 @@ exports.run = function(room) {
     var numHarvesters = Math.ceil(maxOccupancy / 2);
 
     // minimum populations
-    if (room.memory.population.harvester.length < 1 &&
-        (room.memory.spawnQueue.length == 0 ||
-         (room.memory.spawnQueue.length > 0 && 
-          (room.memory.spawnQueue[0].role !== 'harvester' && !room.memory.spawnQueue[0].highPriority)))) {
-        room.memory.spawnQueue.splice(0, 0, new Globals.SpawnRequest('harvester', true));
+    //--------------------------------------------------------------------------
+
+    // push a high priority harvester if there are zero harvesters right now,
+    // and either the queue is empty, or the first queued spawn is not already
+    // a high priority harvester
+    var harvesterPopulationIsZero = (room.memory.population.harvester.length == 0);
+    var spawnQueueIsEmpty = (room.memory.spawnQueueHiPriority.length == 0);
+    var firstQueuedSpawnIsHiPriorityHarvester = !spawnQueueIsEmpty && room.memory.spawnQueueHiPriority[0] === 'harvester';
+    if (harvesterPopulationIsZero &&
+        (spawnQueueIsEmpty || !firstQueuedSpawnIsHiPriorityHarvester)) {
+        room.memory.spawnQueueHiPriority.splice(0, 0, 'harvester');
     }
-    if (population.upgrader < 1) {
-        room.memory.spawnQueue.push(new Globals.SpawnRequest('upgrader', false));
+
+    var criticalRoles = ['upgrader', 'builder', 'distributor', 'soldier'];
+    for (var r in criticalRoles) {
+        var role = criticalRoles[r];
+        if (room.memory.population[role] < 1 &&
+            !_.includes(room.memory.spawnQueueHiPriority, role)) {
+            room.memory.spawnQueueHiPriority.push(role);
+        }
     }
-    if (population.builder < 1) {
-        room.memory.spawnQueue.push(new Globals.SpawnRequest('builder', false));
-    }
-    //if (population.distributor < 1) {
-    //    room.memory.spawnQueue.push(new Globals.SpawnRequest('distributor', false));
-    //}
 
     // spawn creeps
     var spawns = room.find(FIND_MY_SPAWNS);
     for (var s in spawns) {
         var spawn = spawns[s];
         if (spawn.spawning === null) {
-            var request = room.memory.spawnQueue[0];
-            if (request !== undefined) {
+            var role = room.memory.spawnQueueHiPriority[0];
+            if (role !== undefined) {
 
-                var body = request.highPriority ? 
-                    UtilsCreep.getBestBuildableCreepClass(room, request.role) :
-                    UtilsCreep.getBestPossibleCreepClass(room, request.role);
-
-                var mem = Globals.getCreepRoleMemory(request.role);
+                var body = UtilsCreep.getBestBuildableCreepClass(room, role);
+                var mem = Globals.getCreepRoleMemory(role);
 
                 if (spawn.canCreateCreep(body) === OK) {
                     var err = spawn.createCreep(body, undefined, mem);
                     if (_.isString(err)) {
-                        room.memory.spawnQueue.shift();
+                        room.memory.spawnQueueHiPriority.shift();
                         room.memory.stats.energySpent += UtilsCreep.getCreepBodyCost(body);
+                        continue;
+                    }
+                }
+            }
+
+            role = room.memory.spawnQueueLoPriority[0];
+            if (role !== undefined) {
+
+                var body = UtilsCreep.getBestPossibleCreepClass(room, role);
+                var mem = Globals.getCreepRoleMemory(role);
+
+                if (spawn.canCreateCreep(body) === OK) {
+                    var err = spawn.createCreep(body, undefined, mem);
+                    if (_.isString(err)) {
+                        room.memory.spawnQueueLoPriority.shift();
+                        room.memory.stats.energySpent += UtilsCreep.getCreepBodyCost(body);
+                        continue;
                     }
                 }
             }
@@ -107,7 +154,8 @@ exports.run = function(room) {
 
 
     // print summary
-    if (Game.time % Globals.ROOM_SUMMARY_PRINT_TIME === 0) {
+    if (Game.time % room.memory.stats.reportRate === 0 ||
+        room.memory.commands.printReport) {
 
         console.log('<span style="color:yellow;">' + "Room Stats Summary - " + Game.time + '</span>');
         console.log('<span style="color:yellow;">' + "=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/=/\n" + '</span>');
@@ -120,130 +168,31 @@ exports.run = function(room) {
         console.log("* Energy Intake Rate   " + room.memory.stats.energyIntakeAvg);
         console.log("* Energy Spent Rate    " + room.memory.stats.energySpentAvg);
         console.log("* Energy Net Rate      " + room.memory.stats.energyNetAverage);
-
-        //console.log();
-        //console.log("> Harvesters           " + population.harvester);
-        //console.log("> Upgraders            " + population.upgrader);
+        console.log("*");
+        console.log("* Builder Cycles       (" + room.memory.stats.creepCycleCounter.builder.idle +
+            " idle / " + room.memory.stats.creepCycleCounter.builder.total + " total)");
+        console.log("* Distributor Cycles   (" + room.memory.stats.creepCycleCounter.distributor.idle +
+            " idle / " + room.memory.stats.creepCycleCounter.distributor.total + " total)");
 
         console.log();
-        console.log("-- Queue --");
+        console.log("-- Queues --");
         var queue = " ";
-        for (var q in room.memory.spawnQueue) {
-            var req = room.memory.spawnQueue[q];
-            queue += (req.role + " ");
+        for (var q in room.memory.spawnQueueHiPriority) {
+            var role = room.memory.spawnQueueHiPriority[q];
+            queue += (role + " ");
         }
-        console.log(queue);
+        console.log("HP: " + queue);
+        queue = " ";
+        for (var q in room.memory.spawnQueueLoPriority) {
+            var role = room.memory.spawnQueueLoPriority[q];
+            queue += (role + " ");
+        }
+        console.log("LP: " + queue);
         console.log(JSON.stringify(population));
 
         console.log("\n\n");
+
+        room.memory.commands.printReport = false;
     }
-
-
-
-    /*
-
-    // get spawn
-    var spawns = room.find(FIND_MY_SPAWNS);
-    for (var s in spawns) {
-        var spawn = spawns[s];
-        if (spawn.spawning === null) {
-            var body = null;
-            var mem = null;
-            
-            // priority spawns
-            //--------------------------
-            if (room.memory.population.harvester.length < 2) {
-                body = UtilsCreep.getBestBuildableCreepClass(room, 'harvester');
-                mem = Globals.getCreepRoleMemory('harvester');
-                if (spawn.canCreateCreep(body) == OK) {
-                    spawn.createCreep(body, undefined, mem);
-                }
-
-            } else if (room.memory.population.upgrader.length < 2) {
-                body = UtilsCreep.getBestPossibleCreepClass(room, 'upgrader');
-                mem = Globals.getCreepRoleMemory('upgrader');
-                if (spawn.canCreateCreep(body) == OK) {
-                    spawn.createCreep(body, undefined, mem);
-                }
-
-            } else if (room.memory.population.builder.length < 1) {
-                body = UtilsCreep.getBestPossibleCreepClass(room, 'builder');
-                mem = Globals.getCreepRoleMemory('builder');
-                if (spawn.canCreateCreep(body) == OK) {
-                    spawn.createCreep(body, undefined, mem);
-                }
-
-            } else if (room.memory.population.distributor.length < 1) {
-                body = UtilsCreep.getBestBuildableCreepClass(room, 'distributor');
-                mem = Globals.getCreepRoleMemory('distributor');
-                if (spawn.canCreateCreep(body) == OK) {
-                    spawn.createCreep(body, undefined, mem);
-                }
-
-            } else if (!('soldier' in room.memory.population) || (room.memory.population['soldier'].length < 1)) {
-                if (spawn.canCreateCreep(Globals.TYPE_S_CLASS_4) == OK) {
-                    spawn.createCreep(Globals.TYPE_S_CLASS_4, undefined, Globals.MEM_TYPE_S);
-                }
-
-            } else {
-
-                // extra spawns
-                //----------------------
-
-            }
-        }
-    }
-
-    */
-
-
-    /*
-
-    // spawn harvesters
-    var harvesterBody = Utils.getBestCreepClass(room, 'harvester');
-    var harvesterMemory = Object.assign({}, Globals.CREEP_MEMORY);
-    harvesterMemory.role = 'harvester';
-    for (var s in spawns) {
-        var spawn = spawns[s];
-        if (spawn.spawning == null) {
-            if (room.memory.population['harvester'].length < 3) {
-                if (spawn.canCreateCreep(harvesterBody) == OK) {
-                    spawn.createCreep(harvesterBody, undefined, harvesterMemory);
-                }
-            }
-        }
-    }
-
-    // spawn upgrader
-    var upgraderBody = Utils.getBestCreepClass(room, 'upgrader');
-    var upgraderMemory = Object.assign({}, Globals.CREEP_MEMORY);
-    upgraderMemory.role = 'upgrader';
-    for (var s in spawns) {
-        var spawn = spawns[s];
-        if (spawn.spawning == null) {
-            if (room.memory.population['upgrader'].length < 5) {
-                if (spawn.canCreateCreep(upgraderBody) == OK) {
-                    spawn.createCreep(upgraderBody, undefined, upgraderMemory);
-                }
-            }
-        }
-    }
-
-    // spawn builder
-    var builderBody = Utils.getBestCreepClass(room, 'builder');
-    var builderMemory = Object.assign({}, Globals.CREEP_MEMORY);
-    builderMemory.role = 'builder';
-    for (var s in spawns) {
-        var spawn = spawns[s];
-        if (spawn.spawning == null) {
-            if (room.memory.population['builder'].length < 2) {
-                if (spawn.canCreateCreep(builderBody) == OK) {
-                    spawn.createCreep(builderBody, undefined, builderMemory);
-                }
-            }
-        }
-    }
-
-    */
 
 };

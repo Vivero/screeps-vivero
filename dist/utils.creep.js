@@ -11,6 +11,16 @@ var Utils = require('utils');
 var exports = module.exports = {};
 
 
+exports.getBodyPartTypeCount = function(creep, bodyPartType) {
+    var count = 0;
+    for (var b in creep.body) {
+        var bodyPart = creep.body[b];
+        if (bodyPart.hits > 0 && bodyPart.type === bodyPartType) count += 1;
+    }
+    return count;
+}
+
+
 exports.getCreepBodyCost = function(body) {
     var cost = 0;
     for (var part in body) {
@@ -67,15 +77,21 @@ exports.findAvailableSource = function(creep) {
         for (var s in creep.room.memory.sources) {
             var sourceInfo = creep.room.memory.sources[s];
             var source = Game.getObjectById(sourceInfo.id);
-            rangeToSources.push([sourceInfo, creep.pos.getRangeTo(source)]);
+            if (source.energy > 0)
+                rangeToSources.push([sourceInfo, creep.pos.getRangeTo(source)]);
         }
-        var sortedSources = _.sortBy(rangeToSources, [function (s) {
-                return s[1];
-            }]);
+        
+        if (rangeToSources.length == 0) {
+            return null;
+        }
+
+        rangeToSources.sort(function(a, b) {
+            return (a[1] === b[1]) ? 0 : ((a[1] < b[1]) ? -1 : 1);
+        });
 
         availableSource = null;
-        for (var s in sortedSources) {
-            var info = sortedSources[s][0];
+        for (var s in rangeToSources) {
+            var info = rangeToSources[s][0];
             if (info.occupancy < info.maxOccupancy) {
                 availableSource = Game.getObjectById(info.id);
                 break;
@@ -94,7 +110,7 @@ exports.setSourceTarget = function(creep) {
 
     // retrieve from memory
     var source = Game.getObjectById(creep.memory.target);
-    if (source !== null) {
+    if (source !== null && source instanceof Source) {
         var sourceInfo = Utils.getCachedSourceInfoInRoom(source.id, creep.room);
         if ((sourceInfo !== null) &&
             (source.energy > 0) &&
@@ -162,6 +178,30 @@ exports.setSpawnOrExtensionStoreTarget = function(creep) {
 };
 
 
+exports.setSpawnStoreTarget = function(creep) {
+    
+    // target validation function
+    var validTarget = function(target) { 
+        return ((target.structureType === STRUCTURE_SPAWN) &&
+                (target.energy < target.energyCapacity));
+    };
+
+    return setStructureTarget(creep, validTarget);
+};
+
+
+exports.setExtensionStoreTarget = function(creep) {
+    
+    // target validation function
+    var validTarget = function(target) { 
+        return (target.structureType === STRUCTURE_EXTENSION &&
+                (target.energy < target.energyCapacity));
+    };
+
+    return setStructureTarget(creep, validTarget);
+};
+
+
 exports.setContainerStoreTarget = function(creep) {
     
     // target validation function
@@ -209,6 +249,102 @@ exports.setStorageOrContainerWithdrawTarget = function(creep) {
     };
 
     return setStructureTarget(creep, validTarget);
+};
+
+
+exports.setContainerWithdrawTarget = function(creep) {
+    
+    // target validation function
+    var validTarget = function(target) { 
+        return ((target.structureType === STRUCTURE_CONTAINER) &&
+                ('energy' in target.store) &&
+                (target.store.energy > 0));
+    };
+
+    return setStructureTarget(creep, validTarget);
+};
+
+
+exports.setStorageWithdrawTarget = function(creep) {
+    
+    // target validation function
+    var validTarget = function(target) { 
+        return ((target.structureType === STRUCTURE_STORAGE) &&
+                ('energy' in target.store) &&
+                (target.store.energy > 0));
+    };
+
+    return setStructureTarget(creep, validTarget);
+};
+
+
+exports.setDroppedResourceTarget = function(creep) {
+    
+    // initialize target spawn/extension
+    var target = null;
+    var found = false;
+
+    // target validation function
+    var validTarget = function(target) {
+
+        var pathToTarget = PathFinder.search(creep.pos, {pos: target.pos, range: 1}, {
+            // We need to set the defaults costs higher so that we
+            // can set the road cost lower in `roomCallback`
+            plainCost: 2,
+            swampCost: 10,
+
+            roomCallback: function(roomName) {
+                var room = Game.rooms[roomName];
+                if (!room) return;
+                var costs = new PathFinder.CostMatrix;
+
+                room.find(FIND_STRUCTURES).forEach(function(structure) {
+                    if (structure.structureType === STRUCTURE_ROAD) {
+                        // Favor roads over plain tiles
+                        costs.set(structure.pos.x, structure.pos.y, 1);
+                    } else if (structure.structureType !== STRUCTURE_CONTAINER && 
+                               structure.structureType !== STRUCTURE_RAMPART) {
+                        // Can't walk through non-walkable buildings
+                        costs.set(structure.pos.x, structure.pos.y, 0xff);
+                    }
+                });
+
+                // Avoid creeps in the room
+                /*room.find(FIND_CREEPS).forEach(function(creep) {
+                    costs.set(creep.pos.x, creep.pos.y, 0xff);
+                });*/
+
+                return costs;
+            }
+        });
+
+        return (!pathToTarget.incomplete &&
+                (target.amount > pathToTarget.path.length));
+    };
+
+    // retrieve from memory
+    if (creep.memory.target !== null) {
+        var resource = Game.getObjectById(creep.memory.target);
+
+        if (resource !== null && 
+            resource instanceof Resource) {
+            target = resource;
+            found = true;
+        }
+        creep.memory.target = found ? resource.id : null;
+    }
+
+    // otherwise find new target
+    if (!found) {
+        target = creep.pos.findClosestByRange(FIND_DROPPED_ENERGY, {
+            filter: (structure) => {
+                return validTarget(structure);
+            }
+        });
+        creep.memory.target = (target !== null) ? target.id : null;
+    }
+
+    return target;
 };
 
 
@@ -268,7 +404,7 @@ exports.setRepairTarget = function(creep) {
             target = structure;
             found = true;
         }
-        creep.memory.reapirTarget = found ? target.id : null;
+        creep.memory.repairTarget = found ? target.id : null;
         creep.memory.target = found ? target.id : null;
     }
 
@@ -331,6 +467,42 @@ exports.getWithdrawableTarget = function(creep, resourceType) {
                 ('store' in target) &&
                 (resourceType in target.store) &&
                 (target.store[resourceType] > 0));
+    }
+
+    // retrieve from memory
+    var target = Game.getObjectById(creep.memory.target);
+    if (!validTarget(target)) {
+        target = null;
+        creep.memory.target = null;
+    }
+
+    return target;
+};
+
+exports.getPickupTarget = function(creep) {
+
+    // target validation function
+    function validTarget(target) {
+        return ((target !== null) &&
+                target instanceof Resource);
+    }
+
+    // retrieve from memory
+    var target = Game.getObjectById(creep.memory.target);
+    if (!validTarget(target)) {
+        target = null;
+        creep.memory.target = null;
+    }
+
+    return target;
+};
+
+exports.getAttackableTarget = function(creep) {
+
+    // target validation function
+    function validTarget(target) {
+        return ((target !== null) &&
+                ('my' in target) && !target.my);
     }
 
     // retrieve from memory

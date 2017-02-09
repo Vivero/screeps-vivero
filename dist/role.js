@@ -47,7 +47,9 @@ exports.run = function(creep) {
     var startingState = creep.memory.stateStack[creep.memory.stateStack.length - 1];
 
     // announce change in state
-    if (startingState != Globals.STATE_IDLE && startingState != creep.memory.statePrev) {
+    if (startingState != Globals.STATE_IDLE && 
+        startingState != Globals.STATE_MOVE &&
+        startingState != creep.memory.statePrev) {
         creep.say(Globals.STATE_STRING[startingState]);
     }
 

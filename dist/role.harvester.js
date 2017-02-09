@@ -14,6 +14,9 @@ var exports = module.exports = {};
 // finite state machine
 var FSM = {};
 
+// get this creep's WORK body part count
+var workParts = 0;
+
 
 // find a potential storage target, and set it as the creep's target
 function storageTarget(creep) {
@@ -21,11 +24,11 @@ function storageTarget(creep) {
     // find container
     var target = UtilsCreep.setContainerStoreTarget(creep);
     
-    // or a storage if no container found
-    target = (target === null) ? UtilsCreep.setStorageStoreTarget(creep) : target;
-    
     // or a spawn if no storage found
     target = (target === null) ? UtilsCreep.setSpawnOrExtensionStoreTarget(creep) : target;
+    
+    // or a storage if no container found
+    target = (target === null) ? UtilsCreep.setStorageStoreTarget(creep) : target;
     
     // return true if a target was found (it will be set in creep memory)
     return (target !== null);
@@ -58,9 +61,15 @@ FSM[Globals.STATE_IDLE] = function(creep) {
         return;
     }
 
-    // if not, go hang out at the controller
-    creep.memory.target = creep.room.controller.id;
-    creep.memory.stateStack.push(Globals.STATE_MOVE);
+    // if not, go hang out at the nearest source
+    var source = creep.pos.findClosestByRange(FIND_SOURCES);
+    if (!creep.pos.inRangeTo(source, 5)) {
+        creep.memory.target = source.id;
+        creep.memory.targetRange = 5;
+        creep.memory.stateStack.push(Globals.STATE_MOVE);
+    } else {
+        creep.memory.target = null;
+    }
 };
 
 // STATE_STORE
@@ -81,6 +90,7 @@ FSM[Globals.STATE_STORE] = function(creep) {
 
         // move if the target is far
         if (!creep.pos.inRangeTo(target, 1)) {
+            creep.memory.targetRange = 1;
             creep.memory.stateStack.push(Globals.STATE_MOVE);
             return;
         }
@@ -118,6 +128,7 @@ FSM[Globals.STATE_HARVEST] = function(creep) {
         
         // move if the target is far
         if (!creep.pos.inRangeTo(target, 1)) {
+            creep.memory.targetRange = 1;
             creep.memory.stateStack.push(Globals.STATE_MOVE);
             return;
         }
@@ -128,7 +139,7 @@ FSM[Globals.STATE_HARVEST] = function(creep) {
             creep.memory.stateStack.pop();
             Utils.warn(creep.name + ".STATE_HARVEST: harvest failed! (" + err + ")");
         } else {
-            creep.room.memory.stats.energyIntake += 2;
+            creep.room.memory.stats.energyIntake += 2 * workParts;
         }
     } else {
         creep.memory.target = null;
@@ -142,8 +153,13 @@ FSM[Globals.STATE_MOVE] = function(creep) {
 
     // move to object if it's far away
     var target = Game.getObjectById(creep.memory.target);
+
     if (target !== null) {
-        if (creep.pos.inRangeTo(target, 1)) {
+
+        // how far away should we approach the target
+        var range = creep.memory.targetRange;
+
+        if (creep.pos.inRangeTo(target, range)) {
             creep.memory.stateStack.pop();
         } else {
             var err = creep.moveTo(target);
@@ -162,6 +178,9 @@ FSM[Globals.STATE_MOVE] = function(creep) {
 };
 
 exports.run = function(creep) {
+
+    // get creep stats
+    workParts = UtilsCreep.getBodyPartTypeCount(creep, WORK);
 
     // run the current state
     FSM[creep.memory.stateStack[creep.memory.stateStack.length - 1]](creep);

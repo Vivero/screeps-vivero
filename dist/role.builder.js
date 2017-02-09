@@ -14,6 +14,9 @@ var exports = module.exports = {};
 // finite state machine
 var FSM = {};
 
+// get this creep's WORK body part count
+var workParts = 0;
+
 
 // find a build site, and set it as the creep's target
 function buildTarget(creep) {
@@ -72,7 +75,7 @@ FSM[Globals.STATE_IDLE] = function(creep) {
     }
 
     // otherwise look for a source to harvest
-    else if ((_.sum(creep.carry) < creep.carryCapacity) && sourceTarget(creep)) {
+    else if (_.sum(creep.carry) < creep.carryCapacity) {
         if (storageTarget(creep)) {
             creep.memory.stateStack.push(Globals.STATE_WITHDRAW);
             return;
@@ -85,11 +88,14 @@ FSM[Globals.STATE_IDLE] = function(creep) {
     // if not, go hang out at the controller
     if (!creep.pos.inRangeTo(creep.room.controller, 5)) {
         creep.memory.target = creep.room.controller.id;
-        creep.memory.moveRange = 5;
+        creep.memory.targetRange = 5;
         creep.memory.stateStack.push(Globals.STATE_MOVE);
     } else {
         creep.memory.target = null;
     }
+
+    // increase the idle tick cycles counter for builders in this room
+    creep.room.memory.stats.creepCycleCounter.builder.idle += 1;
 };
 
 // STATE_WITHDRAW
@@ -110,7 +116,7 @@ FSM[Globals.STATE_WITHDRAW] = function(creep) {
 
         // move if the target is far
         if (!creep.pos.inRangeTo(target, 1)) {
-            creep.memory.moveRange = 1;
+            creep.memory.targetRange = 1;
             creep.memory.stateStack.push(Globals.STATE_MOVE);
             return;
         }
@@ -149,7 +155,7 @@ FSM[Globals.STATE_HARVEST] = function(creep) {
         
         // move if the target is far
         if (!creep.pos.inRangeTo(target, 1)) {
-            creep.memory.moveRange = 1;
+            creep.memory.targetRange = 1;
             creep.memory.stateStack.push(Globals.STATE_MOVE);
             return;
         }
@@ -160,7 +166,7 @@ FSM[Globals.STATE_HARVEST] = function(creep) {
             creep.memory.stateStack.pop();
             Utils.warn(creep.name + ".STATE_HARVEST: harvest failed! (" + err + ")");
         } else {
-            creep.room.memory.stats.energyIntake += 2;
+            creep.room.memory.stats.energyIntake += 2 * workParts;
         }
     } else {
         creep.memory.target = null;
@@ -186,7 +192,7 @@ FSM[Globals.STATE_BUILD] = function(creep) {
         
         // move if the target is far
         if (!creep.pos.inRangeTo(target, 3)) {
-            creep.memory.moveRange = 3;
+            creep.memory.targetRange = 3;
             creep.memory.stateStack.push(Globals.STATE_MOVE);
             return;
         }
@@ -197,7 +203,7 @@ FSM[Globals.STATE_BUILD] = function(creep) {
             creep.memory.stateStack.pop();
             Utils.warn(creep.name + ".STATE_BUILD: build failed! (" + err + ")");
         } else {
-            creep.room.memory.stats.energySpent += 5;
+            creep.room.memory.stats.energySpent += 5 * workParts;
         }
     } else {
         creep.memory.buildTarget = null;
@@ -224,7 +230,7 @@ FSM[Globals.STATE_REPAIR] = function(creep) {
         
         // move if the target is far
         if (!creep.pos.inRangeTo(target, 3)) {
-            creep.memory.moveRange = 3;
+            creep.memory.targetRange = 3;
             creep.memory.stateStack.push(Globals.STATE_MOVE);
             return;
         }
@@ -234,6 +240,8 @@ FSM[Globals.STATE_REPAIR] = function(creep) {
             creep.memory.target = null;
             creep.memory.stateStack.pop();
             Utils.warn(creep.name + ".STATE_REPAIR: repair failed! (" + err + ")");
+        } else {
+            creep.room.memory.stats.energySpent += 1 * workParts;
         }
     } else {
         creep.memory.repairTarget = null;
@@ -251,18 +259,20 @@ FSM[Globals.STATE_MOVE] = function(creep) {
     
     if (target !== null) {
 
-        // min range from build/repair sites is 3. otherwise, it's 1
-        var range = ('moveRange' in creep.memory) ? creep.memory.moveRange : 1;
+        // how far away should we approach the target
+        var range = creep.memory.targetRange;
 
         if (creep.pos.inRangeTo(target, range)) {
             creep.memory.stateStack.pop();
         } else {
             var err = creep.moveTo(target);
-            if (err !== OK && err !== ERR_TIRED && err !== ERR_NO_PATH) {
+            if (err !== OK && err !== ERR_TIRED) {
                 creep.memory.target = null;
                 creep.memory.stateStack.pop();
-                Utils.warn(creep.name + ".STATE_MOVE: moveTo failed! (range = " + 
-                    range + ") (err = " + err + ")");
+                if (err !== ERR_NO_PATH) {
+                    Utils.warn(creep.name + ".STATE_MOVE: moveTo failed! (range = " + 
+                        range + ") (err = " + err + ")");
+                }
             }
         }
     } else {
@@ -272,6 +282,12 @@ FSM[Globals.STATE_MOVE] = function(creep) {
 };
 
 exports.run = function(creep) {
+
+    // get creep stats
+    workParts = UtilsCreep.getBodyPartTypeCount(creep, WORK);
+
+    // increase the tick cycles counter for builders in this room
+    creep.room.memory.stats.creepCycleCounter.builder.total += 1;
 
     // run the current state
     FSM[creep.memory.stateStack[creep.memory.stateStack.length - 1]](creep);

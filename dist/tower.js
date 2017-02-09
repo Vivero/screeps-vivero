@@ -7,6 +7,7 @@
 
 var Globals = require('globals');
 var Utils = require('utils');
+var UtilsStructure = require('utils.structure');
 
 var exports = module.exports = {};
 
@@ -14,7 +15,10 @@ exports.run = function(towerInfo) {
 
     // initialize the state
     var tower = Game.getObjectById(towerInfo.id);
+    if (!tower) return;
+    
     var state = towerInfo.state;
+
 
     // state machine
     switch (state) {
@@ -25,14 +29,14 @@ exports.run = function(towerInfo) {
             var target = null;
 
             // check for hostile creeps
-            target = Utils.Structure.setHostileCreepTarget(towerInfo);
+            target = UtilsStructure.setHostileCreepTarget(towerInfo);
             if (target !== null && tower.energy > 0) {
                 state = Globals.STATE_TWR_ATTACK;
                 break;
             }
 
             // check if there are repair sites
-            target = Utils.Structure.setRepairTarget(towerInfo);
+            target = UtilsStructure.setRepairTarget(towerInfo);
             if (target !== null && tower.energy > 0) {
                 state = Globals.STATE_TWR_REPAIR;
                 break;
@@ -50,7 +54,7 @@ exports.run = function(towerInfo) {
                 break;
             }
 
-            target = Utils.Structure.setRepairTarget(towerInfo);
+            target = UtilsStructure.setRepairTarget(towerInfo);
             if (target !== null) {
                 tower.repair(target);
             } else {
@@ -69,7 +73,7 @@ exports.run = function(towerInfo) {
                 break;
             }
 
-            target = Utils.Structure.setHostileCreepTarget(towerInfo);
+            target = UtilsStructure.setHostileCreepTarget(towerInfo);
             if (target !== null) {
                 tower.attack(target);
             } else {

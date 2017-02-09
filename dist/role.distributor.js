@@ -7,6 +7,7 @@
 
 var Globals = require('globals');
 var Utils = require('utils');
+var UtilsCreep = require('utils.creep');
 
 var exports = module.exports = {};
 
@@ -15,23 +16,46 @@ var FSM = {};
 
 
 // find a potential storage target, and set it as the creep's target
-function storageTarget(creep) {
+function storageTarget(creep, includeStorage) {
 
-    // find spawn or extension
-    var target = UtilsCreep.setSpawnOrExtensionStoreTarget(creep);
+    // find tower
+    var target = UtilsCreep.setTowerStoreTarget(creep);
     
-    // or a tower if no spawn found
-    target = (target === null) ? UtilsCreep.setTowerStoreTarget(creep) : target;
+    // or spawn or extension
+    target = (target === null) ? UtilsCreep.setSpawnOrExtensionStoreTarget(creep) : target;
+    
+    // or storage
+    target = (target === null && includeStorage) ? UtilsCreep.setStorageStoreTarget(creep) : target;
     
     // return true if a target was found (it will be set in creep memory)
     return (target !== null);
 }
 
 // find a potential energy container, and set it as the creep's target
-function withdrawTarget(creep) {
+function containerWithdrawTarget(creep) {
 
     // find container or storage structure
-    var target = UtilsCreep.setStorageOrContainerWithdrawTarget(creep);
+    var target = UtilsCreep.setContainerWithdrawTarget(creep);
+
+    // return true if a source was found (it will be set in creep memory)
+    return (target !== null);
+}
+
+// find a potential energy container, and set it as the creep's target
+function storageWithdrawTarget(creep) {
+
+    // find container or storage structure
+    var target = UtilsCreep.setStorageWithdrawTarget(creep);
+
+    // return true if a source was found (it will be set in creep memory)
+    return (target !== null);
+}
+
+// find a dropped resource, and set it as the creep's target
+function pickupTarget(creep) {
+
+    // find container or storage structure
+    var target = UtilsCreep.setDroppedResourceTarget(creep);
 
     // return true if a source was found (it will be set in creep memory)
     return (target !== null);
@@ -42,27 +66,42 @@ function withdrawTarget(creep) {
 //==============================================================================
 FSM[Globals.STATE_IDLE] = function(creep) {
 
-    // if carrying energy, store it
-    if (creep.carry.energy > 0 && storageTarget(creep)) {
+    // if carrying energy, store it in a tower, extension, or storage
+    if (creep.carry.energy > 0 && storageTarget(creep, true)) {
         creep.memory.stateStack.push(Globals.STATE_STORE);
         return;
     }
 
-    // otherwise look for a source to harvest
-    else if ((_.sum(creep.carry) < creep.carryCapacity) && sourceTarget(creep)) {
-        if (storageTarget(creep)) {
-            creep.memory.stateStack.push(Globals.STATE_WITHDRAW);
-            return;
-        } else if (sourceTarget(creep)) {
-            creep.memory.stateStack.push(Globals.STATE_HARVEST);
-            return;
-        }
+    // or pickup dropped resources
+    if (_.sum(creep.carry) < creep.carryCapacity && pickupTarget(creep)) {
+        creep.memory.stateStack.push(Globals.STATE_PICKUP);
+        return;
+    }
+
+    // or withdraw energy from a container
+    if (_.sum(creep.carry) < creep.carryCapacity && containerWithdrawTarget(creep)) {
+        creep.memory.stateStack.push(Globals.STATE_WITHDRAW);
+        return;
+    }
+
+    // if we reach this point, then there were no containers to withdraw from.
+    // try getting some energy from storage
+    if (_.sum(creep.carry) < creep.carryCapacity && storageTarget(creep, false) && storageWithdrawTarget(creep)) {
+        creep.memory.stateStack.push(Globals.STATE_WITHDRAW);
+        return;
     }
 
     // if not, go hang out at the controller
-    creep.memory.target = creep.room.controller.id;
-    creep.memory.moveRange = 3;
-    creep.memory.stateStack.push(Globals.STATE_MOVE);
+    if (!creep.pos.inRangeTo(creep.room.controller, 5)) {
+        creep.memory.target = creep.room.controller.id;
+        creep.memory.targetRange = 5;
+        creep.memory.stateStack.push(Globals.STATE_MOVE);
+    } else {
+        creep.memory.target = null;
+    }
+
+    // increase the idle tick cycles counter for distributors in this room
+    creep.room.memory.stats.creepCycleCounter.distributor.idle += 1;
 };
 
 // STATE_WITHDRAW
@@ -83,7 +122,7 @@ FSM[Globals.STATE_WITHDRAW] = function(creep) {
 
         // move if the target is far
         if (!creep.pos.inRangeTo(target, 1)) {
-            creep.memory.moveRange = 1;
+            creep.memory.targetRange = 1;
             creep.memory.stateStack.push(Globals.STATE_MOVE);
             return;
         }
@@ -108,7 +147,7 @@ FSM[Globals.STATE_WITHDRAW] = function(creep) {
 //==============================================================================
 FSM[Globals.STATE_STORE] = function(creep) {
 
-    // go idle if empty
+    // finish when empty
     if (creep.carry.energy === 0) {
         creep.memory.target = null;
         creep.memory.stateStack.pop();
@@ -122,6 +161,7 @@ FSM[Globals.STATE_STORE] = function(creep) {
 
         // move if the target is far
         if (!creep.pos.inRangeTo(target, 1)) {
+            creep.memory.targetRange = 1;
             creep.memory.stateStack.push(Globals.STATE_MOVE);
             return;
         }
@@ -150,8 +190,8 @@ FSM[Globals.STATE_MOVE] = function(creep) {
     
     if (target !== null) {
 
-        // min range from controller is 3. otherwise, it's 1
-        var range = (target.id === creep.room.controller.id) ? 3 : 1;
+        // how far away should we approach the target
+        var range = creep.memory.targetRange;
 
         if (creep.pos.inRangeTo(target, range)) {
             creep.memory.stateStack.pop();
@@ -169,153 +209,51 @@ FSM[Globals.STATE_MOVE] = function(creep) {
     }
 };
 
+// STATE_PICKUP
+//==============================================================================
+FSM[Globals.STATE_PICKUP] = function(creep) {
 
+    // finish when full
+    if (_.sum(creep.carry) >= creep.carryCapacity) {
+        creep.memory.target = null;
+        creep.memory.stateStack.pop();
+        return;
+    }
 
+    // get the storage target from memory
+    var target = UtilsCreep.getPickupTarget(creep);
 
+    if (target !== null) {
 
+        // move if the target is far
+        if (!creep.pos.inRangeTo(target, 1)) {
+            creep.memory.targetRange = 1;
+            creep.memory.stateStack.push(Globals.STATE_MOVE);
+            return;
+        }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        // pick up the resource
+        var err = creep.pickup(target);
+        if (err !== OK) {
+            creep.memory.target = null;
+            creep.memory.stateStack.pop();
+            Utils.warn(creep.name + ".STATE_PICKUP: pickup failed! (" + err + ")");
+        }
+    } else {
+        creep.memory.target = null;
+        creep.memory.stateStack.pop();
+    }
+};
 
 exports.run = function(creep) {
 
-    // initialize the state
-    var state = creep.memory.state;
+    // increase the tick cycles counter for distributors in this room
+    creep.room.memory.stats.creepCycleCounter.distributor.total += 1;
 
-    // state machine
-    switch (state) {
+    // run the current state
+    FSM[creep.memory.stateStack[creep.memory.stateStack.length - 1]](creep);
 
-        // State: IDLE
-        //==========================
-        case Globals.STATE_IDLE:
-            var target = null;
-            var source = null;
-
-            // check if there are tower sites to transfer to
-            target = Utils.setTowerTarget(creep);
-            if (target !== null) {
-                if (creep.carry.energy > 0) {
-                    state = Globals.STATE_DISTRIBUTE;
-                } else {
-                    state = Globals.STATE_WITHDRAW;
-                }
-                break;
-            }
-
-            // check if there are dropped resources to pick up
-            target = Utils.setDroppedResourceTarget(creep, RESOURCE_ENERGY);
-            if (target !== null) {
-                if (target.amount > (creep.carryCapacity - _.sum(creep.carry))) {
-                    state = Globals.STATE_STORE;
-                } else {
-                    state = Globals.STATE_PICKUP;
-                }
-            }
-            break;
-            
-
-        // State: DISTRIBUTE
-        //==========================
-        case Globals.STATE_DISTRIBUTE:
-            var target = null;
-
-            if (creep.carry.energy <= 0) {
-                state = Globals.STATE_IDLE;
-                break;
-            }
-
-            target = Utils.setTowerTarget(creep);
-            if (target !== null) {
-                if (creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(target);
-                }
-            } else {
-                state = Globals.STATE_IDLE;
-            }
-            break;
-            
-
-        // State: WITHDRAW
-        //==========================
-        case Globals.STATE_WITHDRAW:
-            var target = Utils.setContainerTarget(creep, RESOURCE_ENERGY);
-            if (target !== null) {
-                var withdrawAmount = Math.min(creep.carryCapacity - _.sum(creep.carry), target.store[RESOURCE_ENERGY]);
-                if (creep.withdraw(target, RESOURCE_ENERGY, withdrawAmount) == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(target);
-                }
-            } else {
-                state = Globals.STATE_IDLE;
-            }
-
-            if (creep.carry.energy >= creep.carryCapacity) {
-                var target = Utils.setTowerTarget(creep);
-                if (target !== null) {
-                    state = Globals.STATE_DISTRIBUTE;
-                } else {
-                    state = Globals.STATE_IDLE;
-                }
-            }
-            break;
-            
-
-        // State: PICKUP
-        //==========================
-        case Globals.STATE_PICKUP:
-            var target = Utils.setDroppedResourceTarget(creep, RESOURCE_ENERGY);
-            if (target !== null) {
-                var err = creep.pickup(target);
-                if (err == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(target);
-                } else if (err == OK || err == ERR_FULL) {
-                    state = Globals.STATE_STORE;
-                } else {
-                    console.log(creep.name + " error: " + err);
-                }
-            } else {
-                state = Globals.STATE_IDLE;
-            }
-
-            break;
-            
-
-        // State: STORE
-        //==========================
-        case Globals.STATE_STORE:
-            if (creep.carry.energy <= 0) {
-                state = Globals.STATE_IDLE;
-                break;
-            }
-
-            var target = Utils.setStorageTarget(creep);
-            if (target !== null) {
-                if (creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(target);
-                }
-            } else {
-                state = Globals.STATE_IDLE;
-            }
-
-            break;
-            
-
-        //==========================
-        default:
-            state = Globals.STATE_IDLE;
-    }
-
-    return state;
+    // return the latest state
+    return creep.memory.stateStack[creep.memory.stateStack.length - 1];
 };
+

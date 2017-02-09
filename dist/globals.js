@@ -7,9 +7,21 @@
 
 var exports = module.exports = {};
 
-// UNIVERSAL SETTINGS
+// GLOBAL SETTINGS
 //==============================================================================
-exports.DEBUG = true;
+exports.DEBUG                           = true;
+
+// logic constants
+exports.ROOM_SUMMARY_PRINT_TIME         = 100;
+exports.ROOM_ENERGY_AVERAGE_TIME        = 500;
+
+// repairability thresholds
+exports.MAX_WALL_LEVEL                  = 50000;
+exports.MAX_RAMPART_LEVEL               = 10000;
+exports.REPAIR_THRESHOLD_PCT            = 0.7;
+
+// storage thresholds
+exports.TOWER_ENERGY_THRESHOLD_PCT      = 0.9;
 
 
 // AI LOGIC
@@ -20,7 +32,7 @@ exports.STATE_HARVEST       =  20;
 exports.STATE_REPAIR        =  30;
 exports.STATE_STORE         =  40;
 exports.STATE_UPGRADE       =  50;
-exports.STATE_DISTRIBUTE    =  60;
+//exports.STATE_DISTRIBUTE    =  60;
 exports.STATE_WITHDRAW      =  70;
 exports.STATE_PICKUP        =  80;
 exports.STATE_ATTACK        =  90;
@@ -39,7 +51,7 @@ exports.STATE_STRING[exports.STATE_HARVEST]     = 'harvesting';
 exports.STATE_STRING[exports.STATE_REPAIR]      = 'repairing';
 exports.STATE_STRING[exports.STATE_STORE]       = 'storing';
 exports.STATE_STRING[exports.STATE_UPGRADE]     = 'upgrading';
-exports.STATE_STRING[exports.STATE_DISTRIBUTE]  = 'distribute';
+//exports.STATE_STRING[exports.STATE_DISTRIBUTE]  = 'distribute';
 exports.STATE_STRING[exports.STATE_WITHDRAW]    = 'withdraw';
 exports.STATE_STRING[exports.STATE_PICKUP]      = 'pickup';
 exports.STATE_STRING[exports.STATE_ATTACK]      = 'attacking';
@@ -142,11 +154,12 @@ exports.CREEP_CLASS = {
 
 // creep memory
 var CREEP_MEMORY = {
-    role:       'special',
-    stateStack: [exports.STATE_IDLE],
-    statePrev:  exports.STATE_IDLE,
-    target:     null,
-    flag:       null,
+    role:           'special',
+    stateStack:     [exports.STATE_IDLE],
+    statePrev:      exports.STATE_IDLE,
+    target:         null,
+    targetRange:    1,
+    flag:           null,
 };
 
 var CREEP_ROLE_MEMORY = {
@@ -173,7 +186,8 @@ exports.getCreepRoleMemory = function(role) {
 exports.ROOM_MEMORY_ARYS = [
     'sources',
     'towers',
-    'spawnQueue',
+    'spawnQueueHiPriority',
+    'spawnQueueLoPriority',
 ];
 exports.ROOM_MEMORY_OBJS = {
     population: {},
@@ -181,22 +195,24 @@ exports.ROOM_MEMORY_OBJS = {
         lastExecTime: 0,
     },
     stats: {
-        lastExecTime: 0,
-        energyIntake: 0,
-        energyIntakePrev: 0,
-        energyIntakeAvg: 0,
-        energySpent: 0,
-        energySpentPrev: 0,
-        energySpentAvg: 0,
-        energyNetAverage: 0,
+        lastExecTime:       0,
+        reportRate:         exports.ROOM_SUMMARY_PRINT_TIME,
+        energyIntake:       0,
+        energyIntakeAvg:    0,
+        energySpent:        0,
+        energySpentAvg:     0,
+        energyNetAverage:   0,
+        creepCycleCounter:  {},
     },
     commands: {
-        spawnSpecial: false,
+        printReport:        false,
+        spawnSpecial:       false,
     },
 };
 for (var r in exports.CREEP_ROLES) {
     var role = exports.CREEP_ROLES[r];
     exports.ROOM_MEMORY_OBJS.population[role] = [];
+    exports.ROOM_MEMORY_OBJS.stats.creepCycleCounter[role] = {idle: 0, total: 0};
 }
 
 
@@ -206,31 +222,6 @@ exports.GAME_MEMORY = {
 };
 
 
-// GAME WORLD
-//==============================================================================
-
-// logic constants
-exports.ROOM_SUMMARY_PRINT_TIME = 1;
-exports.ROOM_ENERGY_AVERAGE_TIME = 500;
-
-// repairability thresholds
-exports.MAX_WALL_LEVEL = 50000;
-exports.MAX_RAMPART_LEVEL = 10000;
-exports.REPAIR_THRESHOLD_PCT = 0.7;
-
-// storage thresholds
-exports.TOWER_ENERGY_THRESHOLD_PCT = 0.9;
-
-
 // CLASSES
 //==============================================================================
 
-// creep spawn request
-function SpawnRequest(role, highPriority) {
-  // always initialize all instance properties
-  this.role = role;
-  this.highPriority = highPriority;
-}
-
-// export the class
-exports.SpawnRequest = SpawnRequest;

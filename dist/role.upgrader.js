@@ -14,6 +14,9 @@ var exports = module.exports = {};
 // finite state machine
 var FSM = {};
 
+// get this creep's WORK body part count
+var workParts = 0;
+
 
 // find a potential energy container, and set it as the creep's target
 function storageTarget(creep) {
@@ -128,7 +131,7 @@ FSM[Globals.STATE_HARVEST] = function(creep) {
             creep.memory.stateStack.pop();
             Utils.warn(creep.name + ".STATE_HARVEST: harvest failed! (" + err + ")");
         } else {
-            creep.room.memory.stats.energyIntake += 2;
+            creep.room.memory.stats.energyIntake += 2 * workParts;
         }
     } else {
         creep.memory.target = null;
@@ -163,7 +166,7 @@ FSM[Globals.STATE_UPGRADE] = function(creep) {
         creep.memory.stateStack.pop();
         Utils.warn(creep.name + ".STATE_UPGRADE: upgradeController failed! (" + err + ")");
     } else {
-        creep.room.memory.stats.energySpent += 1;
+        creep.room.memory.stats.energySpent += 1 * workParts;
     }
 };
 
@@ -198,6 +201,9 @@ FSM[Globals.STATE_MOVE] = function(creep) {
 };
 
 exports.run = function(creep) {
+
+    // get creep stats
+    workParts = UtilsCreep.getBodyPartTypeCount(creep, WORK);
 
     // run the current state
     FSM[creep.memory.stateStack[creep.memory.stateStack.length - 1]](creep);

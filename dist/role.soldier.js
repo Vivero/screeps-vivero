@@ -8,79 +8,111 @@
 
 var Globals = require('globals');
 var Utils = require('utils');
+var UtilsCreep = require('utils.creep');
+var UtilsOffense = require('utils.offense');
 
 var exports = module.exports = {};
 
-exports.run = function(creep) {
-
-    // initialize the state
-    var state = creep.memory.state;
-
-    // state machine
-    switch (state) {
-
-        // State: IDLE
-        //==========================
-        case Globals.STATE_IDLE:
-            var target = null;
-
-            // check for hostile creeps
-            target = Utils.Offense.setHostileCreepTarget(creep);
-            if (target != null) {
-                state = Globals.STATE_ATTACK;
-                break;
-            }
-
-            // check for rally flags
-            if ('rally' in Game.flags) {
-                creep.memory.flag = 'rally';
-                state = Globals.STATE_RALLY;
-                break;
-            }
-
-            break;
+// finite state machine
+var FSM = {};
 
 
-        // State: RALLY
-        //==========================
-        case Globals.STATE_RALLY:
-            creep.moveTo(Game.flags[creep.memory.flag]);
+// find a potential energy source, and set it as the creep's target
+function hostileTarget(creep) {
 
-            // check for hostile creeps
-            var target = null;
-            target = Utils.Offense.setHostileCreepTarget(creep);
-            if (target != null) {
-                state = Globals.STATE_ATTACK;
-                break;
-            }
+    // find hostile creeps
+    var target = UtilsOffense.setHostileCreepTarget(creep);
 
-            break;
+    // return true if a source was found (it will be set in creep memory)
+    return (target !== null);
+}
 
 
-        // State: ATTACK
-        //==========================
-        case Globals.STATE_ATTACK:
-            creep.moveTo(creep.memory.flag);
+// STATE_IDLE
+//==============================================================================
+FSM[Globals.STATE_IDLE] = function(creep) {
 
-            // check for hostile creeps
-            var target = null;
-            target = Utils.Offense.setHostileCreepTarget(creep);
-            if (target != null) {
-                if (creep.attack(target) == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(target);
-                }
-            } else {
-                state = Globals.STATE_IDLE;
-            }
+    // if hostiles present, attack
+    if (hostileTarget(creep)) {
+        creep.memory.stateStack.push(Globals.STATE_ATTACK);
 
-            break;
-            
+        var target = UtilsCreep.getAttackableTarget(creep);
 
-        //==========================
-        default:
-            state = Globals.STATE_IDLE;
+        if (!creep.pos.inRangeTo(target, 1)) {
+            creep.memory.stateStack.push(Globals.STATE_MOVE);
+        }
+        return;
     }
 
-    return state;
+    // if not, go hang out at the controller
+    if (!creep.pos.inRangeTo(creep.room.controller, 5)) {
+        creep.memory.target = creep.room.controller.id;
+        creep.memory.targetRange = 5;
+        creep.memory.stateStack.push(Globals.STATE_MOVE);
+    } else {
+        creep.memory.target = null;
+    }
 };
+
+// STATE_ATTACK
+//==============================================================================
+FSM[Globals.STATE_ATTACK] = function(creep) {
+
+    // get the hostile target from memory
+    var target = UtilsCreep.getAttackableTarget(creep);
+
+    if (target !== null) {
+        
+        // move if the target is far
+        if (!creep.pos.inRangeTo(target, 1)) {
+            creep.memory.stateStack.push(Globals.STATE_MOVE);
+            return;
+        }
+
+        var err = creep.attack(target);
+        if (err !== OK) {
+            creep.memory.target = null;
+            creep.memory.stateStack.pop();
+            Utils.warn(creep.name + ".STATE_ATTACK: attack failed! (" + err + ")");
+        }
+    } else {
+        creep.memory.target = null;
+        creep.memory.stateStack.pop();
+    }
+};
+
+// STATE_MOVE
+//==============================================================================
+FSM[Globals.STATE_MOVE] = function(creep) {
+
+    // move to object if it's far away
+    var target = Game.getObjectById(creep.memory.target);
+    if (target !== null) {
+        if (creep.pos.inRangeTo(target, 1)) {
+            creep.memory.stateStack.pop();
+        } else {
+            var err = creep.moveTo(target);
+            if (err !== OK && err !== ERR_TIRED) {
+                creep.memory.target = null;
+                creep.memory.stateStack.pop();
+                if (err !== ERR_NO_PATH) {
+                    Utils.warn(creep.name + ".STATE_MOVE: moveTo failed! (" + err + ")");
+                }
+            }
+        }
+    } else {
+        creep.memory.target = null;
+        creep.memory.stateStack.pop();
+    }
+};
+
+exports.run = function(creep) {
+
+    // run the current state
+    FSM[creep.memory.stateStack[creep.memory.stateStack.length - 1]](creep);
+
+    // return the latest state
+    return creep.memory.stateStack[creep.memory.stateStack.length - 1];
+};
+
 
