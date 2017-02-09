@@ -14,6 +14,9 @@ var exports = module.exports = {};
 // finite state machine
 var FSM = {};
 
+// declares the end of the tick cycle
+var cycleComplete = false;
+
 // get this creep's WORK body part count
 var workParts = 0;
 
@@ -96,6 +99,8 @@ FSM[Globals.STATE_IDLE] = function(creep) {
 
     // increase the idle tick cycles counter for builders in this room
     creep.room.memory.stats.creepCycleCounter.builder.idle += 1;
+
+    cycleComplete = true;
 };
 
 // STATE_WITHDRAW
@@ -131,6 +136,7 @@ FSM[Globals.STATE_WITHDRAW] = function(creep) {
             creep.memory.stateStack.pop();
             Utils.warn(creep.name + ".STATE_WITHDRAW: withdraw failed! (" + err + ")");
         }
+        cycleComplete = true;
     } else {
         creep.memory.target = null;
         creep.memory.stateStack.pop();
@@ -168,6 +174,7 @@ FSM[Globals.STATE_HARVEST] = function(creep) {
         } else {
             creep.room.memory.stats.energyIntake += 2 * workParts;
         }
+        cycleComplete = true;
     } else {
         creep.memory.target = null;
         creep.memory.stateStack.pop();
@@ -205,6 +212,7 @@ FSM[Globals.STATE_BUILD] = function(creep) {
         } else {
             creep.room.memory.stats.energySpent += 5 * workParts;
         }
+        cycleComplete = true;
     } else {
         creep.memory.buildTarget = null;
         creep.memory.target = null;
@@ -243,6 +251,7 @@ FSM[Globals.STATE_REPAIR] = function(creep) {
         } else {
             creep.room.memory.stats.energySpent += 1 * workParts;
         }
+        cycleComplete = true;
     } else {
         creep.memory.repairTarget = null;
         creep.memory.target = null;
@@ -274,6 +283,7 @@ FSM[Globals.STATE_MOVE] = function(creep) {
                         range + ") (err = " + err + ")");
                 }
             }
+            cycleComplete = true;
         }
     } else {
         creep.memory.target = null;
@@ -282,6 +292,10 @@ FSM[Globals.STATE_MOVE] = function(creep) {
 };
 
 exports.run = function(creep) {
+
+    // run state machine until we hit a terminal condition
+    cycleComplete = false
+    var stateCounter = 0;
 
     // get creep stats
     workParts = UtilsCreep.getBodyPartTypeCount(creep, WORK);
@@ -301,8 +315,23 @@ exports.run = function(creep) {
     // increase the tick cycles counter for builders in this room
     creep.room.memory.stats.creepCycleCounter.builder.total += 1;
 
-    // run the current state
-    FSM[creep.memory.stateStack[creep.memory.stateStack.length - 1]](creep);
+    // run the state machine
+    while (!cycleComplete) {
+
+        // get current state
+        var currentState = creep.memory.stateStack[creep.memory.stateStack.length - 1];
+        //console.log(creep.name + ": running " + Globals.STATE_STRING[currentState]);
+        
+        // run
+        FSM[currentState](creep);
+
+        // protect against infinite loop
+        stateCounter++;
+        if (stateCounter >= 10) {
+            Utils.warn(creep.name + " got stuck!");
+            break;
+        }
+    }
 
     // return the latest state
     return creep.memory.stateStack[creep.memory.stateStack.length - 1];

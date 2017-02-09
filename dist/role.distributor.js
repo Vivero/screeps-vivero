@@ -14,7 +14,7 @@ var exports = module.exports = {};
 // finite state machine
 var FSM = {};
 
-// declares the end of this tick cycle
+// declares the end of the tick cycle
 var cycleComplete = false;
 
 
@@ -257,20 +257,26 @@ FSM[Globals.STATE_PICKUP] = function(creep) {
 
 exports.run = function(creep) {
 
-    // get the current state to run
+    // run state machine until we hit a terminal condition
     cycleComplete = false
     var stateCounter = 0;
 
     // increase the tick cycles counter for distributors in this room
     creep.room.memory.stats.creepCycleCounter.distributor.total += 1;
 
-    console.log(creep.name + ": stack " + creep.memory.stateStack.length + " ----------");
+    //console.log(creep.name + ": stack " + creep.memory.stateStack.length + " ----------");
 
-    // run the current state
+    // run the state machine
     while (!cycleComplete) {
+
+        // get current state
         var currentState = creep.memory.stateStack[creep.memory.stateStack.length - 1];
-        console.log(creep.name + ": running " + Globals.STATE_STRING[currentState]);
+        //console.log(creep.name + ": running " + Globals.STATE_STRING[currentState]);
+        
+        // run
         FSM[currentState](creep);
+
+        // protect against infinite loop
         stateCounter++;
         if (stateCounter >= 10) {
             Utils.warn(creep.name + " got stuck!");
