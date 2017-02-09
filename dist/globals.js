@@ -134,6 +134,7 @@ exports.CREEP_CLASS = {
 
     builder: [
         bodyPartMaker(WORK, 2, CARRY, 1, MOVE, 1), // 300
+        bodyPartMaker(WORK, 2, CARRY, 2, MOVE, 2), // 400
         bodyPartMaker(WORK, 2, CARRY, 2, MOVE, 4), // 500
         bodyPartMaker(WORK, 4, CARRY, 4, MOVE, 4), // 800
     ],
