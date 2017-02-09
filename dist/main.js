@@ -40,8 +40,9 @@ function cleanup() {
     }
 
     // check for CPU overruns
-    if (Game.cpu.getUsed() > (Game.cpu.tickLimit * 0.9)) {
-        Utils.err("WARNING: CPU OVERRUN! used: " + Game.cpu.getUsed().toFixed(2) + ", limit: " + Game.cpu.tickLimit + ", bucket: " + Game.cpu.bucket);
+    if (Game.cpu.getUsed() > (Game.cpu.tickLimit * 0.9) ||
+        Game.cpu.bucket < 1000) {
+        Utils.err("WARNING: CPU USAGE! used: " + Game.cpu.getUsed().toFixed(2) + ", limit: " + Game.cpu.tickLimit + ", bucket: " + Game.cpu.bucket);
     }
 }
 
