@@ -208,7 +208,14 @@ FSM[Globals.STATE_MOVE] = function(creep) {
         if (creep.pos.inRangeTo(target, range)) {
             creep.memory.stateStack.pop();
         } else {
-            var err = creep.moveTo(target);
+            var err = creep.moveTo(target, {
+                visualizePathStyle: {
+                    fill: 'transparent',
+                    stroke: '#fff',
+                    lineStyle: 'dashed',
+                    strokeWidth: .15,
+                    opacity: .8,
+                }});
             if (err !== OK && err !== ERR_TIRED && err !== ERR_NO_PATH) {
                 creep.memory.target = null;
                 creep.memory.stateStack.pop();

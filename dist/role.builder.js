@@ -301,16 +301,22 @@ exports.run = function(creep) {
     workParts = UtilsCreep.getBodyPartTypeCount(creep, WORK);
 
     // visualize build target
-    /*try {
+    try {
         if (creep.memory.buildTarget !== null) {
             var target = Game.getObjectById(creep.memory.buildTarget);
             if (target !== null) {
-                creep.room.visual.text("\u2692", target.pos, {color: "yellow", opacity: 0.5});
+                creep.room.visual.text("\u2692", target.pos, {color: "cyan", opacity: 0.4});
+            }
+        }
+        if (creep.memory.repairTarget !== null) {
+            var target = Game.getObjectById(creep.memory.repairTarget);
+            if (target !== null) {
+                creep.room.visual.text("\u2692", target.pos, {color: "green", opacity: 0.4});
             }
         }
     } catch (e) {
         Utils.err(creep.name + " (" + creep.memory.role + ") visuals exception!");
-    }*/
+    }
 
     // increase the tick cycles counter for builders in this room
     creep.room.memory.stats.creepCycleCounter.builder.total += 1;
