@@ -17,7 +17,7 @@ exports.ROOM_ENERGY_AVERAGE_TIME        = 600;
 
 // repairability thresholds
 exports.MAX_WALL_LEVEL                  = 200000;
-exports.MAX_RAMPART_LEVEL               = 10000;
+exports.MAX_RAMPART_LEVEL               = 50000;
 exports.REPAIR_THRESHOLD_PCT            = 0.7;
 
 // storage thresholds
