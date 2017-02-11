@@ -53,7 +53,7 @@ exports.run = function(room) {
         //----------------------------------------------------------------------
         
         // spawn harvesters
-        var maxRoomEnergyExtractionRate = (room.memory.sources.length * 10) * 0.75;
+        var maxRoomEnergyExtractionRate = room.memory.sources.length * 10;
 
         // total available mining spots
         var maxOccupancy = _.sum(room.memory.sources, 'maxOccupancy');
