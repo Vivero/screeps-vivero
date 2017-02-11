@@ -62,20 +62,25 @@ exports.run = function(room) {
     var towers = room.find(FIND_MY_STRUCTURES, {
         filter: { structureType: STRUCTURE_TOWER },
     });
-    if (room.memory.towers.length != towers.length) {
-        room.memory.towers = [];
-        for (var t in towers) {
-            var tower = towers[t];
-            if (!(_.find(room.memory.towers, {'id': tower.id}))) {
-                room.memory.towers.push({
-                    id:         tower.id,
-                    target:     null,
-                    state:      Globals.STATE_TWR_IDLE,
-                    statePrev:  Globals.STATE_TWR_IDLE,
-                });
-            }
+    // add new towers
+    for (var t in towers) {
+        var tower = towers[t];
+        if (room.memory.towers &&  !_.find(room.memory.towers, {'id': tower.id})) {
+            room.memory.towers.push({
+                id:         tower.id,
+                target:     null,
+                stateStack: [Globals.STATE_TWR_IDLE],
+                statePrev:  Globals.STATE_TWR_IDLE,
+            });
         }
     }
+    // delete any old towers
+    for (var t in room.memory.towers) {
+        var towerInfo = room.memory.towers[t];
+        var tower = Game.getObjectById(towerInfo.id);
+        if (!tower) delete room.memory.towers[t];
+    }
+
 
 
     // SURVEY SOURCES

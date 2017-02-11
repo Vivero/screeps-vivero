@@ -11,83 +11,69 @@ var UtilsStructure = require('utils.structure');
 
 var exports = module.exports = {};
 
+// finite state machine
+var FSM = {};
+
+// this tower
+var tower = null;
+
+
+// find a hostile target, and set it as the tower's target
+function hostileTarget(creep) {
+
+    // find hostile creep
+    var target = UtilsStructure.setHostileCreepTarget(creep);
+
+    // return true if a target was found (it will be set in tower memory)
+    return (target !== null);
+}
+
+
+// STATE_TWR_IDLE
+//==============================================================================
+FSM[Globals.STATE_TWR_IDLE] = function(towerInfo) {
+
+    // if holding energy, check for hostile creeps
+    if (tower.energy > 0 && hostileTarget(towerInfo)) {
+        towerInfo.stateStack.push(Globals.STATE_TWR_ATTACK);
+        return;
+    }
+
+}
+
+// STATE_TWR_ATTACK
+//==============================================================================
+FSM[Globals.STATE_TWR_ATTACK] = function(towerInfo) {
+
+    // finish when run out of energy
+    if (tower.energy === 0) {
+        towerInfo.target = null;
+        towerInfo.stateStack.pop();
+        return;
+    }
+
+    // set hostile target
+    var target = UtilsStructure.setHostileCreepTarget(towerInfo);
+
+    if (target !== null) {
+        tower.attack(target);
+    }
+
+}
+
+
 exports.run = function(towerInfo) {
 
     // initialize the state
-    var tower = Game.getObjectById(towerInfo.id);
+    tower = Game.getObjectById(towerInfo.id);
     if (!tower) return;
-    
-    var state = towerInfo.state;
 
+    // get current state
+    var currentState = towerInfo.stateStack[towerInfo.stateStack.length - 1];
 
-    // state machine
-    switch (state) {
+    // run
+    FSM[currentState](towerInfo);
 
-        // State: IDLE
-        //==========================
-        case Globals.STATE_TWR_IDLE:
-            var target = null;
-
-            // check for hostile creeps
-            target = UtilsStructure.setHostileCreepTarget(towerInfo);
-            if (target !== null && tower.energy > 0) {
-                state = Globals.STATE_TWR_ATTACK;
-                break;
-            }
-
-            // check if there are repair sites
-            target = UtilsStructure.setRepairTarget(towerInfo);
-            if (target !== null && tower.energy > 0) {
-                state = Globals.STATE_TWR_REPAIR;
-                break;
-            }
-            break;
-            
-
-        // State: REPAIR
-        //==========================
-        case Globals.STATE_TWR_REPAIR:
-            var target = null;
-
-            if (tower.energy <= 0) {
-                state = Globals.STATE_TWR_IDLE;
-                break;
-            }
-
-            target = UtilsStructure.setRepairTarget(towerInfo);
-            if (target !== null) {
-                tower.repair(target);
-            } else {
-                state = Globals.STATE_TWR_IDLE;
-            }
-            break;
-            
-
-        // State: ATTACK
-        //==========================
-        case Globals.STATE_TWR_ATTACK:
-            var target = null;
-
-            if (tower.energy <= 0) {
-                state = Globals.STATE_TWR_IDLE;
-                break;
-            }
-
-            target = UtilsStructure.setHostileCreepTarget(towerInfo);
-            if (target !== null) {
-                tower.attack(target);
-            } else {
-                state = Globals.STATE_TWR_IDLE;
-            }
-            break;
-            
-
-        //==========================
-        default:
-            state = Globals.STATE_TWR_IDLE;
-    }
-
-    // end
-    towerInfo.statePrev = towerInfo.state;
-    towerInfo.state = state;
+    // return the latest state
+    return towerInfo.stateStack[towerInfo.stateStack.length - 1];
 };
