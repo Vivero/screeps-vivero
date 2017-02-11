@@ -13,6 +13,11 @@ var exports = module.exports = {};
 
 exports.run = function(room) {
 
+    if (room.memory.commands.clearSpawnQueue) {
+        room.memory.commands.clearSpawnQueue = false;
+        room.memory.spawnQueueLoPriority = [];
+    }
+
     // determine current Room Control Level
     var rcl = room.controller.level;
 
@@ -28,14 +33,18 @@ exports.run = function(room) {
     }
 
     // calculate statistics
-    var lastExecTime = room.memory.stats.lastExecTime;
     var currentTime = Game.time;
-    if ((currentTime - lastExecTime) >= Globals.ROOM_ENERGY_AVERAGE_TIME) {
+    var deltaTime = currentTime - room.memory.stats.lastExecTime;
+    if (deltaTime >= Globals.ROOM_ENERGY_AVERAGE_TIME || room.memory.commands.computeStatistics) {
         room.memory.stats.lastExecTime = currentTime;
+        if (room.memory.commands.computeStatistics) {
+            room.memory.commands.printReport = true;
+            room.memory.commands.computeStatistics = false;
+        }
 
         room.memory.stats.energyIntakeAvg = room.memory.stats.energyIntake / 
-            Globals.ROOM_ENERGY_AVERAGE_TIME;
-        room.memory.stats.energySpentAvg = room.memory.stats.energySpent / Globals.ROOM_ENERGY_AVERAGE_TIME;
+            deltaTime;
+        room.memory.stats.energySpentAvg = room.memory.stats.energySpent / deltaTime;
 
         room.memory.stats.energyNetAverage = room.memory.stats.energyIntakeAvg - room.memory.stats.energySpentAvg;
 
@@ -44,17 +53,21 @@ exports.run = function(room) {
         //----------------------------------------------------------------------
         
         // spawn harvesters
-        //var maxRoomEnergyExtractionRate = room.memory.source.length * 10;
-        var maxRoomEnergyExtractionRate = 10;
+        var maxRoomEnergyExtractionRate = (room.memory.sources.length * 10) * 0.75;
+
+        // total available mining spots
+        var maxOccupancy = _.sum(room.memory.sources, 'maxOccupancy');
+
         if (room.memory.stats.energyIntakeAvg < maxRoomEnergyExtractionRate) {
-            room.memory.spawnQueueLoPriority.push('harvester');
-            room.memory.spawnQueueLoPriority.push('harvester');
+            for (var i = 0; i < 2; i++) {
+                if (population.harvester < (maxOccupancy * 1.5))
+                    room.memory.spawnQueueLoPriority.push('harvester');
+            }
         }
 
         // spawn builders
         var builderIdleFraction = (room.memory.stats.creepCycleCounter.builder.total > 0) ? room.memory.stats.creepCycleCounter.builder.idle / room.memory.stats.creepCycleCounter.builder.total : 1.0;
         if (builderIdleFraction < 0.10) {
-            room.memory.spawnQueueLoPriority.push('builder');
             room.memory.spawnQueueLoPriority.push('builder');
         }
 
@@ -65,8 +78,9 @@ exports.run = function(room) {
         }
 
         // spawn upgraders
-        for (var i = population.upgrader; i <= room.controller.level; i++)
+        for (var i = population.upgrader; i < (room.controller.level + 4); i++) {
             room.memory.spawnQueueLoPriority.push('upgrader');
+        }
         //----------------------------------------------------------------------
 
         // reset statistics
@@ -84,9 +98,6 @@ exports.run = function(room) {
 
     // determine number of sources in the room
     var numSources = room.memory.sources.length;
-
-    // total available mining spots
-    var maxOccupancy = _.sum(room.memory.sources, 'maxOccupancy');
 
     // harvesters to build
     var numHarvesters = Math.ceil(maxOccupancy / 2);
