@@ -81,6 +81,11 @@ exports.run = function(room) {
         for (var i = population.upgrader; i < (room.controller.level + 4); i++) {
             room.memory.spawnQueueLoPriority.push('upgrader');
         }
+
+        // spawn soldiers
+        if (population.soldier < 2) {
+            room.memory.spawnQueueLoPriority.push('soldier');
+        }
         //----------------------------------------------------------------------
 
         // reset statistics
