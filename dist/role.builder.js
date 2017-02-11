@@ -27,7 +27,7 @@ function buildTarget(creep) {
     // find container or storage structure
     var target = UtilsCreep.setBuildTarget(creep);
 
-    // return true if a source was found (it will be set in creep memory)
+    // return true if a target was found (it will be set in creep memory)
     return (target !== null);
 }
 
@@ -37,7 +37,7 @@ function repairTarget(creep) {
     // find container or storage structure
     var target = UtilsCreep.setRepairTarget(creep);
 
-    // return true if a source was found (it will be set in creep memory)
+    // return true if a target was found (it will be set in creep memory)
     return (target !== null);
 }
 
@@ -47,7 +47,7 @@ function storageTarget(creep) {
     // find container or storage structure
     var target = UtilsCreep.setStorageOrContainerWithdrawTarget(creep);
 
-    // return true if a source was found (it will be set in creep memory)
+    // return true if a target was found (it will be set in creep memory)
     return (target !== null);
 }
 
