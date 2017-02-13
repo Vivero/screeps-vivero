@@ -39,6 +39,7 @@ FSM[Globals.STATE_IDLE] = function(creep) {
         var target = UtilsCreep.getAttackableTarget(creep);
 
         if (!creep.pos.inRangeTo(target, 1)) {
+            creep.memory.targetRange = 1;
             creep.memory.stateStack.push(Globals.STATE_MOVE);
         }
         return;

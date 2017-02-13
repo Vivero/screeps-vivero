@@ -16,8 +16,8 @@ exports.ROOM_SUMMARY_PRINT_TIME         = 100;
 exports.ROOM_ENERGY_AVERAGE_TIME        = 600;
 
 // repairability thresholds
-exports.MAX_WALL_LEVEL                  = 200000;
-exports.MAX_RAMPART_LEVEL               = 50000;
+exports.MAX_WALL_LEVEL                  = 500000;
+exports.MAX_RAMPART_LEVEL               = 100000;
 exports.REPAIR_THRESHOLD_PCT            = 0.7;
 
 // storage thresholds
@@ -108,14 +108,14 @@ exports.CREEP_EMOJI = {
 
 // creep body part costs
 /*
- * MOVE     = 50
- * WORK     = 100
- * CARRY    = 50
- * ATTACK   = 80
- * R_ATTACK = 150
- * HEAL     = 250
- * CLAIM    = 600
- * TOUGH    = 10
+ * MOVE             = 50
+ * WORK             = 100
+ * CARRY            = 50
+ * ATTACK           = 80
+ * RANGED_ATTACK    = 150
+ * HEAL             = 250
+ * CLAIM            = 600
+ * TOUGH            = 10
  *
 **/
 
@@ -124,7 +124,7 @@ exports.CREEP_CLASS = {
         bodyPartMaker(WORK, 1, CARRY, 2, MOVE, 2), // 300
         bodyPartMaker(WORK, 4, CARRY, 1, MOVE, 2), // 550
         bodyPartMaker(WORK, 4, CARRY, 2, MOVE, 2), // 600
-        bodyPartMaker(WORK, 4, CARRY, 4, MOVE, 4), // 800
+        bodyPartMaker(WORK, 5, CARRY, 3, MOVE, 4), // 850
     ],
 
     upgrader: [

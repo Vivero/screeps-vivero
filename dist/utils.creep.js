@@ -442,7 +442,7 @@ exports.setRepairTarget = function(creep) {
                     return  (structure.structureType === STRUCTURE_WALL && 
                              structure.hits < Globals.MAX_WALL_LEVEL) ||
                             (structure.structureType === STRUCTURE_RAMPART && 
-                             structure.hits < Globals.MAX_RAMPART_LEVEL) || 
+                             structure.hits < (Globals.MAX_RAMPART_LEVEL * Globals.REPAIR_THRESHOLD_PCT)) || 
                             (structure.structureType !== STRUCTURE_WALL &&
                              structure.structureType !== STRUCTURE_RAMPART &&
                              structure.hits < (structure.hitsMax * Globals.REPAIR_THRESHOLD_PCT));

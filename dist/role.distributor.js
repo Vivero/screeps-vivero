@@ -22,10 +22,10 @@ var cycleComplete = false;
 function storageTarget(creep, includeStorage) {
 
     // find tower
-    var target = UtilsCreep.setTowerStoreTarget(creep);
+    var target = UtilsCreep.setSpawnOrExtensionStoreTarget(creep);
     
     // or spawn or extension
-    target = (target === null) ? UtilsCreep.setSpawnOrExtensionStoreTarget(creep) : target;
+    target = (target === null) ? UtilsCreep.setTowerStoreTarget(creep) : target;
     
     // or storage
     target = (target === null && includeStorage) ? UtilsCreep.setStorageStoreTarget(creep) : target;

@@ -75,9 +75,17 @@ exports.setHostileCreepTarget = function(towerInfo) {
         var hostile = Game.getObjectById(towerInfo.target);
 
         if (hostile !== null && ('my' in hostile) && !hostile.my) {
-            target = hostile;
-            found = true;
-            towerInfo.target = hostile.id;
+            var range = tower.pos.getRangeTo(hostile);
+
+            if (range <= 20) {
+                target = hostile;
+                found = true;
+                towerInfo.target = hostile.id;
+            } else {
+                target = null;
+                towerInfo.target = null;
+            }
+            
         }
     }
 

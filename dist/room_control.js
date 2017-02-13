@@ -36,9 +36,9 @@ exports.run = function(room) {
     initialize(room);
 
     // monitor safe mode
-    if (room.controller.safeMode === undefined && room.controller.safeModeAvailable > 0) {
+    /*if (room.controller.safeMode === undefined && room.controller.safeModeAvailable > 0) {
         room.controller.activateSafeMode();
-    }
+    }*/
 
 
     // CACHE SOURCES
