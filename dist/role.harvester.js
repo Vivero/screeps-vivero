@@ -3,86 +3,217 @@
  * Defines functionality of the harvester role.
  *
  */ 
+'use strict';
+
 var Globals = require('globals');
 var Utils = require('utils');
+var UtilsCreep = require('utils.creep');
 
 var exports = module.exports = {};
 
-exports.run = function(creep) {
+// finite state machine
+var FSM = {};
 
-    // initialize the state
-    var state = creep.memory.state;
+// declares the end of the tick cycle
+var cycleComplete = false;
 
-    // state machine
-    switch (state) {
+// get this creep's WORK body part count
+var workParts = 0;
 
-        // State: IDLE
-        //==========================
-        case Globals.STATE_IDLE:
-            // check if there are storage sites to transfer to
-            if (creep.carry.energy > 0) {
-                var target = Utils.setStorageTarget(creep);
-                if (target != null) {
-                    state = Globals.STATE_STORE;
-                } else {
-                    state = Globals.STATE_IDLE;
-                }
-            } else {
-                var source = Utils.setSourceTarget(creep);
-                if (source != null) {
-                    state = Globals.STATE_HARVEST;
-                } else {
-                    state = Globals.STATE_IDLE;
-                }
-            }
-            break;
-            
 
-        // State: STORE
-        //==========================
-        case Globals.STATE_STORE:
-            var target = Utils.setStorageTarget(creep);
-            if (target != null) {
-                if (creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(target);
-                }
-            } else {
-                state = Globals.STATE_IDLE;
-            }
+// find a potential storage target, and set it as the creep's target
+function storageTarget(creep) {
 
-            if (creep.carry.energy <= 0) {
-                state = Globals.STATE_HARVEST;
-            }
-            break;
-            
+    // find container or spawn or extension
+    //var target = UtilsCreep.setContainerStoreTarget(creep);
+    var target = UtilsCreep.setSpawnExtensionContainerStoreTarget(creep);
+    
+    // or spawn or extension
+    //target = (target === null) ? UtilsCreep.setSpawnOrExtensionStoreTarget(creep) : target;
+    
+    // or storage
+    target = (target === null) ? UtilsCreep.setStorageStoreTarget(creep) : target;
+    
+    // return true if a target was found (it will be set in creep memory)
+    return (target !== null);
+}
 
-        // State: HARVEST
-        //==========================
-        case Globals.STATE_HARVEST:
-            var target = Utils.setSourceTarget(creep);
-            if (target != null) {
-                if (creep.harvest(target) == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(target);
-                }
-            } else {
-                state = Globals.STATE_IDLE;
-            }
+// find a potential energy source, and set it as the creep's target
+function sourceTarget(creep) {
 
-            if (creep.carry.energy >= creep.carryCapacity) {
-                var target = Utils.setStorageTarget(creep);
-                if (target != null) {
-                    state = Globals.STATE_STORE;
-                } else {
-                    state = Globals.STATE_IDLE;
-                }
-            }
-            break;
-            
+    // find container
+    var target = UtilsCreep.setSourceTarget(creep);
 
-        //==========================
-        default:
-            state = Globals.STATE_IDLE;
+    // return true if a source was found (it will be set in creep memory)
+    return (target !== null);
+}
+
+
+// STATE_IDLE
+//==============================================================================
+FSM[Globals.STATE_IDLE] = function(creep) {
+
+    // if carrying energy, store it
+    if (creep.carry.energy > 0 && storageTarget(creep)) {
+        creep.memory.stateStack.push(Globals.STATE_STORE);
+        return;
     }
 
-    return state;
+    // otherwise look for a source to harvest
+    else if ((_.sum(creep.carry) < creep.carryCapacity) && sourceTarget(creep)) {
+        creep.memory.stateStack.push(Globals.STATE_HARVEST);
+        return;
+    }
+
+    // if not, go hang out at a spawn
+    var targets = creep.room.find(FIND_MY_SPAWNS);
+    if (targets.length && !creep.pos.inRangeTo(targets[0], 5)) {
+        creep.memory.target = targets[0].id;
+        creep.memory.targetRange = 3;
+        creep.memory.stateStack.push(Globals.STATE_MOVE);
+    } else {
+        creep.memory.target = null;
+    }
+
+    cycleComplete = true;
 };
+
+// STATE_STORE
+//==============================================================================
+FSM[Globals.STATE_STORE] = function(creep) {
+
+    // go idle if empty
+    if (creep.carry.energy === 0) {
+        creep.memory.target = null;
+        creep.memory.stateStack.pop();
+        return;
+    }
+
+    // get the storage target from memory
+    var target = UtilsCreep.getStorableTarget(creep);
+
+    if (target !== null) {
+
+        // move if the target is far
+        if (!creep.pos.inRangeTo(target, 1)) {
+            creep.memory.targetRange = 1;
+            creep.memory.stateStack.push(Globals.STATE_MOVE);
+            return;
+        }
+
+        // amount to store is the lesser of what the creep is carrying, or 
+        // the amount the target can store
+        var amount = Math.min(target.storeCapacity - _.sum(target.store), creep.carry.energy);
+        var err = creep.transfer(target, RESOURCE_ENERGY, amount);
+        if (err !== OK) {
+            creep.memory.target = null;
+            creep.memory.stateStack.pop();
+            Utils.warn(creep.name + ".STATE_STORE: transfer failed! (" + err + ")");
+        }
+        cycleComplete = true;
+    } else {
+        creep.memory.target = null;
+        creep.memory.stateStack.pop();
+    }
+};
+
+// STATE_HARVEST
+//==============================================================================
+FSM[Globals.STATE_HARVEST] = function(creep) {
+
+    // finish when full
+    if (_.sum(creep.carry) >= creep.carryCapacity) {
+        creep.memory.target = null;
+        creep.memory.stateStack.pop();
+        return;
+    }
+
+    // get the harvest target from memory
+    var target = UtilsCreep.setSourceTarget(creep);
+
+    if (target !== null) {
+        
+        // move if the target is far
+        if (!creep.pos.inRangeTo(target, 1)) {
+            creep.memory.targetRange = 1;
+            creep.memory.stateStack.push(Globals.STATE_MOVE);
+            return;
+        }
+
+        var err = creep.harvest(target);
+        if (err !== OK) {
+            creep.memory.target = null;
+            creep.memory.stateStack.pop();
+            Utils.warn(creep.name + ".STATE_HARVEST: harvest failed! (" + err + ")");
+        } else {
+            creep.room.memory.stats.energyIntake += 2 * workParts;
+        }
+        cycleComplete = true;
+    } else {
+        creep.memory.target = null;
+        creep.memory.stateStack.pop();
+    }
+};
+
+// STATE_MOVE
+//==============================================================================
+FSM[Globals.STATE_MOVE] = function(creep) {
+
+    // move to object if it's far away
+    var target = Game.getObjectById(creep.memory.target);
+
+    if (target !== null) {
+
+        // how far away should we approach the target
+        var range = creep.memory.targetRange;
+
+        if (creep.pos.inRangeTo(target, range)) {
+            creep.memory.stateStack.pop();
+        } else {
+            var err = creep.moveTo(target);
+            if (err !== OK && err !== ERR_TIRED) {
+                creep.memory.target = null;
+                creep.memory.stateStack.pop();
+                if (err !== ERR_NO_PATH) {
+                    Utils.warn(creep.name + ".STATE_MOVE: moveTo failed! (" + err + ")");
+                }
+            }
+            cycleComplete = true;
+        }
+    } else {
+        creep.memory.target = null;
+        creep.memory.stateStack.pop();
+    }
+};
+
+exports.run = function(creep) {
+
+    // run state machine until we hit a terminal condition
+    cycleComplete = false
+    var stateCounter = 0;
+
+    // get creep stats
+    workParts = UtilsCreep.getBodyPartTypeCount(creep, WORK);
+
+    // run the state machine
+    while (!cycleComplete) {
+
+        // get current state
+        var currentState = creep.memory.stateStack[creep.memory.stateStack.length - 1];
+        //console.log(creep.name + ": running " + Globals.STATE_STRING[currentState]);
+        
+        // run
+        FSM[currentState](creep);
+
+        // protect against infinite loop
+        stateCounter++;
+        if (stateCounter >= 10) {
+            Utils.warn(creep.name + " got stuck!");
+            break;
+        }
+    }
+
+    // return the latest state
+    return creep.memory.stateStack[creep.memory.stateStack.length - 1];
+};
+

@@ -3,6 +3,8 @@
  * Defines functionality of the reclaimer role.
  *
  */ 
+'use strict';
+
 var Globals = require('globals');
 var Utils = require('utils');
 

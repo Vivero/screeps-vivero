@@ -3,54 +3,72 @@
  * Set of common utilities and routines.
  *
  */ 
+'use strict';
+
 var Globals = require('globals');
-var Utils_Structure = require('utils.structure');
-var Utils_Offense = require('utils.offense');
 
 var exports = module.exports = {};
-exports.Structure = Utils_Structure;
-exports.Offense = Utils_Offense;
+
+exports.debug = function(str) {
+    if (Globals.DEBUG) {
+        console.log('<span style="color:gray;">' + str + '</span>');
+    }
+};
+
+exports.warn = function(str) {
+    console.log('<span style="color:yellow;">' + str + '</span>');
+};
+
+exports.err = function(str) {
+    console.log('<span style="color:red;">' + str + '</span>');
+};
+
 
 exports.is = function(type, obj) {
-    var clas = Object.prototype.toString.call(obj).slice(8, -1);
-    return obj !== undefined && obj !== null && clas === type;
-}
+    var className = Object.prototype.toString.call(obj).slice(8, -1);
+    return obj !== undefined && obj !== null && className === type;
+};
 
 
-exports.getCreepBodyCost = function(body) {
-    var cost = 0;
-    for (var part in body) {
-        cost += BODYPART_COST[body[part]]
-    }
-    return cost;
-}
+exports.isStructure = function(obj) {
+    return (obj !== null) && ('structureType' in obj);
+};
 
 
-exports.getBestCreepClass = function(room, role) {
-    var bodyType = null;
+exports.getCachedSourceInfoInRoom = function(sourceId, room) {
+    var sourceInfo = null;
 
-    // determine available energy capacity
-    var energyCap = room.energyAvailable;
+    if (sourceId !== null) {
+        // loop over cached sources info
+        for (var s in room.memory.sources) {
+            var src = room.memory.sources[s];
 
-    // get creep classes for the role
-    var creepClasses = Globals.CREEP_CLASS[role];
-
-    // get the most expensive class that is still buildable
-    var idx = -1;
-    var creepCost = 0;
-    for (var c in creepClasses) {
-        var classCost = exports.getCreepBodyCost(creepClasses[c]);
-        if (classCost <= energyCap && classCost >= creepCost) {
-            idx = c;
-            creepCost = classCost;
+            // return a matching Game Object ID
+            if (src.id === sourceId) {
+                sourceInfo = src;
+                break;
+            }
         }
     }
-    
-    if (idx >= 0) {
-        bodyType = creepClasses[idx];
+
+    return sourceInfo;
+};
+
+
+exports.getCachedSourceInfo = function(sourceId) {
+    var found = false;
+    var sourceInfo = null;
+
+    if (sourceId !== null) {
+        // loop over visible rooms
+        for (var r in Game.rooms) {
+            sourceInfo = exports.getCachedSourceInfoInRoom(sourceId, Game.rooms[r]);
+            if (sourceInfo !== null) break;
+        }
     }
-    return bodyType;
-}
+
+    return sourceInfo;
+};
 
 
 exports.calculateSourceMaxOccupancy = function(source) {
@@ -76,254 +94,6 @@ exports.calculateSourceMaxOccupancy = function(source) {
     return maxOccupancy;
 };
 
-exports.findAvailableSource = function(creep) {
-    var availableSource = null;
-
-    var adjacentSources = creep.pos.findInRange(FIND_SOURCES, 1);
-    if (adjacentSources.length && (adjacentSources[0].energy > 0)) {
-        availableSource = adjacentSources[0];
-    } else {
-        for (var s in creep.room.memory.sources) {
-            var sourceInfo = creep.room.memory.sources[s];
-            var source = Game.getObjectById(sourceInfo.id);
-            if ((sourceInfo.occupancy < sourceInfo.maxOccupancy) &&
-                (source.energy > 0)) {
-                availableSource = source;
-                break;
-            }
-        }
-    }
-
-    return availableSource;
-};
-
-
-exports.setBuildTarget = function(creep) {
-    // initialize target
-    var target = null;
-    var found = false;
-    if (!('target' in creep.memory)) {
-        creep.memory.target = null;
-    }
-
-    // retrieve from memory
-    if (creep.memory.target != null) {
-        var obj = Game.getObjectById(creep.memory.target);
-
-        if (exports.is('ConstructionSite', obj)) {
-            target = obj;
-            found = true;
-            creep.memory.target = target.id;
-        }
-    }
-
-    // otherwise find new target
-    if (!found) {
-        target = creep.pos.findClosestByRange(FIND_CONSTRUCTION_SITES);
-        if (target != null) {
-            creep.memory.target = target.id;
-        }
-    }
-
-    return target;
-}
-
-
-exports.setSourceTarget = function(creep) {
-    // initialize source
-    var target = null;
-    var found = false;
-    if (!('source' in creep.memory)) {
-        creep.memory.source = null;
-    }
-
-    // retrieve from memory
-    if (creep.memory.source != null) {
-        /*var source = _.find(creep.room.memory.sources, {
-            filter: (source) => {
-                return (source.id === creep.memory.source);
-            }
-        });*/
-        var source = Game.getObjectById(creep.memory.source);
-
-        if ((source != null) && 
-            ('energy' in source) &&
-            (source.occupancy < source.maxOccupancy) &&
-            (source.energy > 0)) {
-            target = Game.getObjectById(source.id);
-            found = true;
-        }
-    }
-
-    // otherwise find new target
-    if (!found) {
-        target = exports.findAvailableSource(creep);
-        if (target != null) {
-            creep.memory.source = target.id;
-        }
-    }
-
-    return target;
-}
-
-
-exports.setRepairTarget = function(creep) {
-    // initialize target
-    var target = null;
-    var found = false;
-    if (!('target' in creep.memory)) {
-        creep.memory.target = null;
-    }
-
-    // retrieve from memory
-    if (creep.memory.target != null) {
-        var structure = Game.getObjectById(creep.memory.target);
-
-        if (structure != null && 'structureType' in structure) {
-            var repairHitsLevel = (structure.structureType === STRUCTURE_WALL) ? Globals.MAX_WALL_LEVEL : 
-                (structure.structureType === STRUCTURE_RAMPART ? Globals.MAX_RAMPART_LEVEL : structure.hitsMax);
-
-            if (structure.hits < repairHitsLevel) {
-                target = structure;
-                found = true;
-                creep.memory.target = structure.id;
-            }
-        }
-    }
-
-    // otherwise find new target
-    if (!found) {
-        // prioritize newly built ramparts
-        target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
-            filter: (structure) => {
-                return (structure.structureType === STRUCTURE_RAMPART &&
-                        structure.hits == 1);
-            }
-        });
-
-        // otherwise search for other targets
-        if (target == null) {
-            target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
-                filter: (structure) => {
-                    return (structure.structureType === STRUCTURE_WALL && 
-                            structure.hits < Globals.MAX_WALL_LEVEL) ||
-                           (structure.structureType === STRUCTURE_RAMPART && 
-                            structure.hits < Globals.MAX_RAMPART_LEVEL) ||
-                           (structure.structureType !== STRUCTURE_WALL &&
-                            structure.structureType !== STRUCTURE_RAMPART &&
-                            structure.hits < (structure.hitsMax * Globals.REPAIR_THRESHOLD_PCT));
-                }
-            });
-        }
-
-        if (target != null) {
-            creep.memory.target = target.id;
-        }
-    }
-
-    return target;
-}
-
-
-exports.setStorageTarget = function(creep) {
-    // initialize target
-    var target = null;
-    var found = false;
-    if (!('target' in creep.memory)) {
-        creep.memory.target = null;
-    }
-
-    // retrieve from memory
-    if (creep.memory.target != null) {
-        var structure = Game.getObjectById(creep.memory.target);
-
-        if ((structure != null) &&
-            ('structureType' in structure) &&
-            (((structure.structureType === STRUCTURE_EXTENSION ||
-               structure.structureType === STRUCTURE_SPAWN) &&
-               structure.energy < structure.energyCapacity) ||
-             ((structure.structureType === STRUCTURE_CONTAINER ||
-               structure.structureType === STRUCTURE_STORAGE) && 
-               _.sum(structure.store) < structure.storeCapacity))) {
-            target = structure;
-            found = true;
-            creep.memory.target = target.id;
-        }
-    }
-
-    // otherwise find new target
-    if (!found) {
-        // first try to find spawns or extensions
-        target = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
-                filter: (structure) => {
-                    return (
-                        (structure.structureType === STRUCTURE_EXTENSION || 
-                         structure.structureType === STRUCTURE_SPAWN) &&
-                         structure.energy < structure.energyCapacity);
-                }
-        });
-        if (target != null) {
-            creep.memory.target = target.id;
-        } else {
-            // try to find storage containers
-            target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
-                    filter: (structure) => {
-                        return ((structure.structureType === STRUCTURE_CONTAINER ||
-                            structure.structureType === STRUCTURE_STORAGE) &&
-                            _.sum(structure.store) < structure.storeCapacity);
-                    }
-            });
-            if (target != null) {
-                creep.memory.target = target.id;
-            }
-        }
-    }
-
-    return target;
-}
-
-
-exports.setContainerTarget = function(creep, resourceType) {
-    // initialize target
-    var target = null;
-    var found = false;
-    if (!('target' in creep.memory)) {
-        creep.memory.target = null;
-    }
-
-    // retrieve from memory
-    if (creep.memory.target != null) {
-        var structure = Game.getObjectById(creep.memory.target);
-
-        if (structure != null && 
-            ('structureType' in structure) &&
-            (structure.structureType === STRUCTURE_CONTAINER ||
-             structure.structureType === STRUCTURE_STORAGE) &&
-            (structure.store[resourceType] > 0)) {
-            target = structure;
-            found = true;
-            creep.memory.target = target.id;
-        }
-    }
-
-    // otherwise find new target
-    if (!found) {
-        
-        target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
-                filter: (structure) => {
-                    return ((structure.structureType === STRUCTURE_CONTAINER ||
-                             structure.structureType === STRUCTURE_STORAGE) &&
-                         (structure.store[resourceType] > 0));
-                }
-        });
-        if (target != null) {
-            creep.memory.target = target.id;
-        }
-    }
-
-    return target;
-}
-
 
 exports.setTowerTarget = function(creep) {
     // initialize target
@@ -334,10 +104,10 @@ exports.setTowerTarget = function(creep) {
     }
 
     // retrieve from memory
-    if (creep.memory.target != null) {
+    if (creep.memory.target !== null) {
         var structure = Game.getObjectById(creep.memory.target);
 
-        if ((structure != null) && 
+        if ((structure !== null) && 
             ('structureType' in structure) &&
             (structure.structureType === STRUCTURE_TOWER) &&
             (structure.energy < structure.energyCapacity)) {
@@ -356,49 +126,11 @@ exports.setTowerTarget = function(creep) {
                          (structure.energy < (structure.energyCapacity * Globals.TOWER_ENERGY_THRESHOLD_PCT)));
                 }
         });
-        if (target != null) {
+        if (target !== null) {
             creep.memory.target = target.id;
         }
     }
 
     return target;
-}
+};
 
-
-exports.setDroppedResourceTarget = function(creep, resourceType) {
-    // initialize target
-    var target = null;
-    var found = false;
-    if (!('target' in creep.memory)) {
-        creep.memory.target = null;
-    }
-
-    // retrieve from memory
-    if (creep.memory.target != null) {
-        var drop = Game.getObjectById(creep.memory.target);
-
-        if (drop != null && 
-            ('resourceType' in drop) &&
-            (drop.resourceType === resourceType) &&
-            (drop.amount >= 50)) {
-            target = drop;
-            found = true;
-            creep.memory.target = target.id;
-        }
-    }
-
-    // otherwise find new target
-    if (!found) {
-        
-        target = creep.pos.findClosestByRange(FIND_DROPPED_RESOURCES, {
-                filter: (drop) => {
-                    return (drop.resourceType === resourceType);
-                }
-        });
-        if (target != null) {
-            creep.memory.target = target.id;
-        }
-    }
-
-    return target;
-}

@@ -2,62 +2,76 @@
  *
  * Encapsulates all creep roles.
  *
- */ 
-var Globals     = require('globals');
-var Harvester   = require('role.harvester');
-var Upgrader    = require('role.upgrader');
-var Builder     = require('role.builder');
-var Reclaimer   = require('role.reclaimer');
-var Distributor = require('role.distributor');
-var Soldier     = require('role.soldier');
+ */
+'use strict';
+
+var Globals = require('globals');
+var Utils = require('utils');
 
 var exports = module.exports = {};
 
-// define role functions
-var roles = {
-    harvester:   Harvester,
-    upgrader:    Upgrader,
-    builder:     Builder,
-    reclaimer:   Reclaimer,
-    distributor: Distributor,
-    soldier:     Soldier,
-};
+// define role functions from source files
+var roles = {};
+for (var r in Globals.CREEP_ROLES) {
+    var role = Globals.CREEP_ROLES[r];
+    roles[role] = require('role.' + role);
+}
+
+function initialize(creep) {
+    // if any fields are missing,
+    // something could've gone wrong with the creep's
+    // memory, so just wipe it
+    var missing = false;
+    var blankMemory = Globals.getCreepRoleMemory(creep.role);
+    for (var f in blankMemory) {
+        missing = !(f in creep.memory);
+        if (missing) break;
+    }
+    if (missing) {
+        Utils.warn(creep.name + ".initialize: memory was corrupted!");
+        creep.memory = blankMemory;
+    }
+
+    // if the state stack is empty, initialize it,
+    // but warn because it should never be empty
+    if (creep.memory.stateStack.length === 0) {
+        Utils.warn(creep.name + ".initialize: empty state stack!");
+        creep.memory.stateStack = Object.assign({}, Globals.CREEP_MEMORY.stateStack);
+    }
+
+    // display visuals
+    try {
+        var textPos = Object.assign({}, creep.pos);
+        textPos.x += 0.2;
+        textPos.y -= 0.4;
+        creep.room.visual.text(Globals.CREEP_EMOJI[creep.memory.role], textPos, {size: 0.4});
+    } catch (e) {
+        Utils.err(creep.name + " (" + creep.memory.role + ") visuals exception!");
+    }
+}
 
 exports.run = function(creep) {
 
-    // initialize the state
-    if (!('state' in creep.memory) || creep.memory.state == null) {
-        creep.memory.state = Globals.STATE_IDLE;
-        creep.memory.statePrev = Globals.STATE_IDLE;
-    }
-    var state = creep.memory.state;
+    // init
+    initialize(creep);
+    var startingState = creep.memory.stateStack[creep.memory.stateStack.length - 1];
 
-    // failsafe: in case memory gets wiped
-    if (!('role' in creep.memory) || ('role' in creep.memory && !(creep.memory.role in roles))) {
-        creep.memory.role = 'harvester';
-        creep.memory.state = Globals.STATE_IDLE;
-        creep.memory.statePrev = Globals.STATE_IDLE;
+    // announce change in state
+    if (startingState != Globals.STATE_IDLE && 
+        startingState != Globals.STATE_MOVE &&
+        startingState != creep.memory.statePrev) {
+        creep.say(Globals.STATE_STRING[startingState]);
     }
 
-    // override behavior
-    if (('override' in creep.memory) && creep.memory.override) {
-        creep.moveTo(Game.flags["Rally Alpha"]);
-    }
-    else {
-
-        // announce change in state
-        if (state != creep.memory.statePrev) {
-            creep.say(Globals.STATE_STRING[state]);
-        }
-
-        // run the role's state machine
-        state = roles[creep.memory.role].run(creep);
-
+    // run the role's state machine
+    try {
+        roles[creep.memory.role].run(creep);
+    } catch (e) {
+        Utils.err(creep.name + " (" + creep.memory.role + ") unexpected exception!\n" + e.stack);
     }
     
 
     // end
-    creep.memory.statePrev = creep.memory.state;
-    creep.memory.state = state;
+    creep.memory.statePrev = startingState;
 
 };

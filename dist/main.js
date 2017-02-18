@@ -1,30 +1,37 @@
+/* main.js
+ *
+ * Entry point routine for Screeps.
+ *
+ */ 
 'use strict';
 
 var Globals = require('globals');
 var RoomControl = require('room_control');
+var Utils = require('utils');
 
+function initialize() {
 
-module.exports.loop = function () {
-
-    // CUSTOM EXECUTION TRIGGER
-    //==================================
-    if ('trigger' in Memory) {
-        if (Memory.trigger) {
-            console.log("Custom trigger!");
-            Memory.trigger = false;
-        }
-    } else {
-        Memory.trigger = false;
+    // initialize commands buffer
+    if (!('commands' in Memory)) {
+        Memory.commands = Object.assign({}, Globals.GAME_MEMORY.commands);
     }
 
-    // EXECUTE ROOM CONTROL
-    //==================================
+
+    // survey the creep population
     for (var r in Game.rooms) {
-        RoomControl.control.run(Game.rooms[r]);
+        Game.rooms[r].memory.population = Object.assign({}, Globals.ROOM_MEMORY_OBJS.population);
     }
+    for (var c in Game.creeps) {
+        var creep = Game.creeps[c];
+        var room = creep.room;
+        if (!(_.includes(room.memory.population[creep.memory.role], creep.id))) {
+            room.memory.population[creep.memory.role].push(creep.id);
+        }
+    }
+}
 
-    // MEMORY CLEANUP
-    //==================================
+function cleanup() {
+    // clean up creep memory
     for (var name in Memory.creeps) {
         if (!Game.creeps[name]) {
             delete Memory.creeps[name];
@@ -32,4 +39,28 @@ module.exports.loop = function () {
         }
     }
 
+    // check for CPU overruns
+    if (Game.cpu.getUsed() > (Game.cpu.tickLimit * 0.9) ||
+        Game.cpu.bucket < 1000) {
+        Utils.err("WARNING: CPU USAGE! used: " + Game.cpu.getUsed().toFixed(2) + ", limit: " + Game.cpu.tickLimit + ", bucket: " + Game.cpu.bucket);
+    }
 }
+
+
+module.exports.loop = function () {
+
+    // INITIALIZE
+    //==================================
+    initialize();
+
+    // EXECUTE ROOM CONTROL
+    //==================================
+    for (var r in Game.rooms) {
+        RoomControl.run(Game.rooms[r]);
+    }
+
+    // CLEANUP
+    //==================================
+    cleanup();
+
+};
