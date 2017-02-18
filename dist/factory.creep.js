@@ -74,9 +74,9 @@ exports.run = function(room) {
             }
         }
 
-        if (harvesterWorkParts <= maxRoomEnergyExtractionParts) {
-            room.memory.spawnQueueLoPriority.push('harvester');
-        }
+        //if (harvesterWorkParts <= maxRoomEnergyExtractionParts) {
+        //    room.memory.spawnQueueLoPriority.push('harvester');
+        //}
 
         // spawn builders
         var builderIdleFraction = (room.memory.stats.creepCycleCounter.builder.total > 0) ? room.memory.stats.creepCycleCounter.builder.idle / room.memory.stats.creepCycleCounter.builder.total : 1.0;
