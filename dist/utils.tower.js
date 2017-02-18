@@ -75,12 +75,43 @@ exports.setHostileCreepTarget = function(towerInfo) {
         var hostile = Game.getObjectById(towerInfo.target);
 
         if (hostile !== null && ('my' in hostile) && !hostile.my) {
-            var range = tower.pos.getRangeTo(hostile);
+            target = hostile;
+            found = true;
+            towerInfo.target = hostile.id;
+        }
+    }
 
-            if (range <= 20) {
-                target = hostile;
+    // otherwise find new target
+    if (!found) {
+        target = tower.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
+
+        if (target !== null) {
+            towerInfo.target = target.id;
+        }
+    }
+
+    return target;
+};
+
+
+exports.setHealCreepTarget = function(towerInfo) {
+    // initialize target
+    var target = null;
+    var found = false;
+    var tower = Game.getObjectById(towerInfo.id);
+    var maxRange = 10;
+
+    // retrieve from memory
+    if (towerInfo.target !== null) {
+        var creep = Game.getObjectById(towerInfo.target);
+
+        if (creep !== null && (creep instanceof Creep) && creep.my && (creep.hits < creep.hitsMax)) {
+            var range = tower.pos.getRangeTo(creep);
+
+            if (range <= maxRange) {
+                target = creep;
                 found = true;
-                towerInfo.target = hostile.id;
+                towerInfo.target = creep.id;
             } else {
                 target = null;
                 towerInfo.target = null;
@@ -91,10 +122,19 @@ exports.setHostileCreepTarget = function(towerInfo) {
 
     // otherwise find new target
     if (!found) {
-        target = tower.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
+        var creeps = tower.room.find(FIND_MY_CREEPS, {
+            filter: (creep) => {
+                var range = tower.pos.getRangeTo(creep);
+                return (creep.hits < creep.hitsMax) && (range <= maxRange);
+            }
+        });
 
-        if (target !== null) {
-            towerInfo.target = target.id;
+        if (creeps.length > 0) {
+            target = creeps[0];
+            towerInfo.target = creeps[0].id;
+        } else {
+            target = null;
+            towerInfo.target = null;
         }
     }
 
