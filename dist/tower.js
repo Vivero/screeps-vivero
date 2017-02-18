@@ -7,7 +7,7 @@
 
 var Globals = require('globals');
 var Utils = require('utils');
-var UtilsStructure = require('utils.structure');
+var UtilsTower = require('utils.tower');
 
 var exports = module.exports = {};
 
@@ -19,10 +19,21 @@ var tower = null;
 
 
 // find a hostile target, and set it as the tower's target
-function hostileTarget(creep) {
+function hostileTarget(towerInfo) {
 
     // find hostile creep
-    var target = UtilsStructure.setHostileCreepTarget(creep);
+    var target = UtilsTower.setHostileCreepTarget(towerInfo);
+
+    // return true if a target was found (it will be set in tower memory)
+    return (target !== null);
+}
+
+
+// find a heal-able target, and set it as the tower's target
+function healTarget(towerInfo) {
+
+    // find my creep
+    var target = UtilsTower.setHealCreepTarget(towerInfo);
 
     // return true if a target was found (it will be set in tower memory)
     return (target !== null);
@@ -34,9 +45,16 @@ function hostileTarget(creep) {
 FSM[Globals.STATE_TWR_IDLE] = function(towerInfo) {
 
     // if holding energy, check for hostile creeps
-    if (tower.energy > 0 && hostileTarget(towerInfo)) {
-        towerInfo.stateStack.push(Globals.STATE_TWR_ATTACK);
-        return;
+    if (tower.energy > 0) {
+        if (hostileTarget(towerInfo)) {
+            towerInfo.stateStack.push(Globals.STATE_TWR_ATTACK);
+            return;
+        }
+        
+        if (healTarget(towerInfo)) {
+            towerInfo.stateStack.push(Globals.STATE_TWR_HEAL);
+            return;
+        }
     }
 
 }
@@ -53,10 +71,36 @@ FSM[Globals.STATE_TWR_ATTACK] = function(towerInfo) {
     }
 
     // set hostile target
-    var target = UtilsStructure.setHostileCreepTarget(towerInfo);
+    var target = UtilsTower.setHostileCreepTarget(towerInfo);
 
     if (target !== null) {
         tower.attack(target);
+    } else {
+        towerInfo.target = null;
+        towerInfo.stateStack.pop();
+    }
+
+}
+
+// STATE_TWR_HEAL
+//==============================================================================
+FSM[Globals.STATE_TWR_HEAL] = function(towerInfo) {
+
+    // finish when run out of energy
+    if (tower.energy === 0) {
+        towerInfo.target = null;
+        towerInfo.stateStack.pop();
+        return;
+    }
+
+    // set hostile target
+    var target = UtilsTower.setHealCreepTarget(towerInfo);
+
+    if (target !== null) {
+        tower.heal(target);
+    } else {
+        towerInfo.target = null;
+        towerInfo.stateStack.pop();
     }
 
 }

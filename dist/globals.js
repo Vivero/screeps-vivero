@@ -16,7 +16,7 @@ exports.ROOM_SUMMARY_PRINT_TIME         = 100;
 exports.ROOM_ENERGY_AVERAGE_TIME        = 600;
 
 // repairability thresholds
-exports.MAX_WALL_LEVEL                  = 500000;
+exports.MAX_WALL_LEVEL                  = 100000;
 exports.MAX_RAMPART_LEVEL               = 100000;
 exports.REPAIR_THRESHOLD_PCT            = 0.7;
 
@@ -121,22 +121,25 @@ exports.CREEP_EMOJI = {
 
 exports.CREEP_CLASS = {
     harvester: [
-        bodyPartMaker(WORK, 1, CARRY, 2, MOVE, 2), // 300
-        bodyPartMaker(WORK, 4, CARRY, 1, MOVE, 2), // 550
-        bodyPartMaker(WORK, 4, CARRY, 2, MOVE, 2), // 600
-        bodyPartMaker(WORK, 5, CARRY, 3, MOVE, 4), // 850
+        bodyPartMaker(WORK, 1, CARRY,  2, MOVE, 2), //  300
+        bodyPartMaker(WORK, 4, CARRY,  1, MOVE, 2), //  550
+        bodyPartMaker(WORK, 4, CARRY,  2, MOVE, 2), //  600
+        bodyPartMaker(WORK, 5, CARRY,  3, MOVE, 4), //  850
+        bodyPartMaker(WORK, 5, CARRY, 10, MOVE, 4), // 1200
     ],
 
     upgrader: [
-        bodyPartMaker(WORK, 1, CARRY, 3, MOVE, 1), // 300
-        bodyPartMaker(WORK, 4, CARRY, 4, MOVE, 4), // 800
+        bodyPartMaker(WORK, 1, CARRY,  3, MOVE, 1), //  300
+        bodyPartMaker(WORK, 4, CARRY,  4, MOVE, 4), //  800
+        bodyPartMaker(WORK, 4, CARRY, 10, MOVE, 7), // 1250
     ],
 
     builder: [
-        bodyPartMaker(WORK, 2, CARRY, 1, MOVE, 1), // 300
-        bodyPartMaker(WORK, 2, CARRY, 2, MOVE, 2), // 400
-        bodyPartMaker(WORK, 2, CARRY, 2, MOVE, 4), // 500
-        bodyPartMaker(WORK, 4, CARRY, 4, MOVE, 4), // 800
+        bodyPartMaker(WORK, 2, CARRY, 1, MOVE, 1), //  300
+        bodyPartMaker(WORK, 2, CARRY, 2, MOVE, 2), //  400
+        bodyPartMaker(WORK, 2, CARRY, 2, MOVE, 4), //  500
+        bodyPartMaker(WORK, 4, CARRY, 4, MOVE, 4), //  800
+        bodyPartMaker(WORK, 4, CARRY, 8, MOVE, 6), // 1100
     ],
 
     reclaimer: [
@@ -144,10 +147,11 @@ exports.CREEP_CLASS = {
     ],
 
     distributor: [
-        bodyPartMaker(CARRY, 2, MOVE, 2), // 200
-        bodyPartMaker(CARRY, 4, MOVE, 4), // 400
-        bodyPartMaker(CARRY, 8, MOVE, 4), // 600
-        bodyPartMaker(CARRY, 8, MOVE, 8), // 800
+        bodyPartMaker(CARRY,  2, MOVE, 2), //  200
+        bodyPartMaker(CARRY,  4, MOVE, 4), //  400
+        bodyPartMaker(CARRY,  8, MOVE, 4), //  600
+        bodyPartMaker(CARRY,  8, MOVE, 8), //  800
+        bodyPartMaker(CARRY, 16, MOVE, 8), // 1200
     ],
 
     soldier: [

@@ -53,7 +53,16 @@ exports.run = function(room) {
         //----------------------------------------------------------------------
         
         // spawn harvesters
+        var maxRoomEnergyExtractionParts = room.memory.sources.length * 5 * 1.5;
         var maxRoomEnergyExtractionRate = room.memory.sources.length * 10;
+
+        // total harvester work parts
+        var harvesterWorkParts = 0;
+        for (var c in room.memory.population.harvester) {
+            var creep = Game.getObjectById(room.memory.population.harvester[c]);
+            //harvesterWorkParts += UtilsCreep.getBodyPartTypeCount(creep, WORK);
+        }
+        //console.log("harvesterWorkParts = " + harvesterWorkParts + ", maxRoomEnergyExtractionParts = " + maxRoomEnergyExtractionParts);
 
         // total available mining spots
         var maxOccupancy = _.sum(room.memory.sources, 'maxOccupancy');
@@ -64,6 +73,10 @@ exports.run = function(room) {
                     room.memory.spawnQueueLoPriority.push('harvester');
             }
         }
+
+        //if (harvesterWorkParts <= maxRoomEnergyExtractionParts) {
+        //    room.memory.spawnQueueLoPriority.push('harvester');
+        //}
 
         // spawn builders
         var builderIdleFraction = (room.memory.stats.creepCycleCounter.builder.total > 0) ? room.memory.stats.creepCycleCounter.builder.idle / room.memory.stats.creepCycleCounter.builder.total : 1.0;
@@ -99,13 +112,7 @@ exports.run = function(room) {
     }
 
     // determine total available energy (spawns + extensions)
-    var energyCap = room.energyCapacityAvailable;
-
-    // determine number of sources in the room
-    var numSources = room.memory.sources.length;
-
-    // harvesters to build
-    var numHarvesters = Math.ceil(maxOccupancy / 2);
+    //var energyCap = room.energyCapacityAvailable;
 
     // minimum populations
     //--------------------------------------------------------------------------
