@@ -6,28 +6,12 @@
 'use strict';
 
 var Globals = require('globals');
-var RoomControl = require('room_control');
+var RoomGovernor = require('room.governor');
 var Utils = require('utils');
 
 function initialize() {
 
-    // initialize commands buffer
-    if (!('commands' in Memory)) {
-        Memory.commands = Object.assign({}, Globals.GAME_MEMORY.commands);
-    }
-
-
-    // survey the creep population
-    for (var r in Game.rooms) {
-        Game.rooms[r].memory.population = Object.assign({}, Globals.ROOM_MEMORY_OBJS.population);
-    }
-    for (var c in Game.creeps) {
-        var creep = Game.creeps[c];
-        var room = creep.room;
-        if (!(_.includes(room.memory.population[creep.memory.role], creep.id))) {
-            room.memory.population[creep.memory.role].push(creep.id);
-        }
-    }
+    
 }
 
 function cleanup() {
@@ -56,7 +40,7 @@ module.exports.loop = function () {
     // EXECUTE ROOM CONTROL
     //==================================
     for (var r in Game.rooms) {
-        RoomControl.run(Game.rooms[r]);
+        RoomGovernor.run(Game.rooms[r]);
     }
 
     // CLEANUP

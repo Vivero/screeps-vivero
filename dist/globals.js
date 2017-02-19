@@ -244,3 +244,15 @@ exports.GAME_MEMORY = {
 // CLASSES
 //==============================================================================
 
+// Constructor
+function Task(type, objId) {
+  this.type          = type;
+  this.objId         = objId;
+  this.assignedCreep = null;
+  this.requiredParts = null;
+}
+// class methods
+//Foo.prototype.fooBar = function() {
+//};
+// export the class
+exports.Task = Task;
